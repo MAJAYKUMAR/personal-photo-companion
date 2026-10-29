@@ -192,9 +192,24 @@ if (!CAN_RUN) {
   });
 
   test('settings save/get IPC round-trip through the preload bridge', () => {
-    assert.match(firstOut, /e2e: selftest-settings-ok/);
-    assert.doesNotMatch(firstOut, /selftest-settings-FAIL/);
+    assert.match(firstOut, /e2e: check-pass settings-save-persists/);
+    assert.doesNotMatch(firstOut, /check-FAIL/);
     assert.doesNotMatch(firstOut, /selftest-error/);
+  });
+
+  test('live sanity checks: window, settings panel, buttons, suppression', () => {
+    for (const name of [
+      'window-240x330', 'avatar-loads', 'status-here-with-you',
+      'toolbar-4-buttons', 'bubble-hidden-at-launch', 'settings-visible',
+      'window-grows-to-700-on-settings', 'save-button-fits-in-window',
+      'photo-option-visible', 'window-shrinks-to-330-after-save',
+      'water-reminder-fires', 'water-bubble-content', 'snooze-recorded',
+      'exercise-bubble-content', 'done-celebration-animation',
+      'done-hides-bubble', 'dnd-status', 'quiet-status',
+      'status-back-to-here-with-you',
+    ]) {
+      assert.match(firstOut, new RegExp(`e2e: check-pass ${name}`), name);
+    }
   });
 
   test('water and exercise reminders fire, including a preview', () => {

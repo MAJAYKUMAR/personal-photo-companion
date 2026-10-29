@@ -231,7 +231,7 @@
     // Grow the window when settings open so Save + photo option are
     // visible; shrink it back when settings close.
     window.companion.resizeWindow(
-      settingsEl.classList.contains('hidden') ? 330 : 620,
+      settingsEl.classList.contains('hidden') ? 330 : 700,
     );
   });
 

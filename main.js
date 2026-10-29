@@ -54,7 +54,7 @@ const WIN_HEIGHT = 330;
 // Tall enough for the full settings panel (avatar, Save, previews, note).
 // The window grows upward from the bottom-right corner so it never
 // slides off the bottom of the screen when settings open.
-const WIN_HEIGHT_SETTINGS = 620;
+const WIN_HEIGHT_SETTINGS = 700;
 
 let mainWindow = null;
 let tray = null;
@@ -442,44 +442,142 @@ function previewReminder(type) {
 }
 
 // End-to-end self-test, driven from the main process through the real
-// preload bridge and the real renderer DOM. Only runs with PCC_E2E=1.
+// Live sanity checks against the real renderer DOM and window.
+// Only runs with PCC_E2E=1. This is the installed-app check list in
+// LIVE_SANITY_CHECKS.md, performed live — not a unit test. Each check
+// logs `check-pass <name>` or `check-FAIL <name>` so a workflow run
+// can be audited check by check.
 async function runE2eSelfTest() {
+  const check = (name, ok, detail) => {
+    e2eLog(ok ? 'check-pass' : 'check-FAIL', name, detail || '');
+  };
+  const js = (code) => mainWindow.webContents.executeJavaScript(code);
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const saved = await mainWindow.webContents.executeJavaScript(
-      `window.companion.saveSettings({ waterIntervalMin: 33, exerciseIntervalMin: 44, workStartHour: 8, workEndHour: 20, quietMode: false, doNotDisturb: false }).then(() => window.companion.getSettings())`,
-    );
-    if (
-      saved &&
-      saved.waterIntervalMin === 33 &&
+    await sleep(1000);
+    // 2. Launch: window size, avatar, status, toolbar.
+    const bounds0 = mainWindow.getBounds();
+    check('window-240x330', bounds0.width === 240 && bounds0.height === 330,
+      JSON.stringify(bounds0));
+    const launchDom = await js(`({
+      avatarSrc: document.getElementById('avatar').src,
+      status: document.getElementById('status').textContent,
+      toolbar: Array.from(document.querySelectorAll('#toolbar button')).map(b => b.id).join(','),
+      bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
+    })`);
+    check('avatar-loads', /avatar\.(png|svg)/.test(launchDom.avatarSrc || ''),
+      launchDom.avatarSrc);
+    check('status-here-with-you', launchDom.status === 'Here with you',
+      launchDom.status);
+    check('toolbar-4-buttons', launchDom.toolbar ===
+      'btn-settings,btn-quiet,btn-dnd,btn-hide', launchDom.toolbar);
+    check('bubble-hidden-at-launch', launchDom.bubbleHidden === true);
+    // 3. Settings panel: gear grows the window to 620px and every
+    // control (including Save and the photo dropdown) fits inside it.
+    await js(`document.getElementById('btn-settings').click()`);
+    await sleep(800);
+    const boundsSettings = mainWindow.getBounds();
+    const settingsDom = await js(`({
+      visible: !document.getElementById('settings').classList.contains('hidden'),
+      saveRect: (() => { const r = document.getElementById('btn-save').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+      photoVisible: !!document.getElementById('in-avatar') && document.getElementById('in-avatar').offsetParent !== null,
+      saveVisible: document.getElementById('btn-save').offsetParent !== null,
+    })`);
+    check('settings-visible', settingsDom.visible === true);
+    check('window-grows-to-700-on-settings', boundsSettings.height === 700,
+      JSON.stringify(boundsSettings));
+    check('save-button-fits-in-window',
+      settingsDom.saveVisible === true &&
+      settingsDom.saveRect.bottom <= boundsSettings.height,
+      JSON.stringify(settingsDom.saveRect));
+    check('photo-option-visible', settingsDom.photoVisible === true);
+    // Change values in the form and click Save for real.
+    const saved = await js(`(async () => {
+      document.getElementById('in-water').value = '33';
+      document.getElementById('in-exercise').value = '44';
+      document.getElementById('in-start').value = '8';
+      document.getElementById('in-end').value = '20';
+      document.getElementById('btn-save').click();
+      await new Promise(r => setTimeout(r, 500));
+      return window.companion.getSettings();
+    })()`);
+    check('settings-save-persists',
+      saved && saved.waterIntervalMin === 33 &&
       saved.exerciseIntervalMin === 44 &&
-      saved.workStartHour === 8 &&
-      saved.workEndHour === 20 &&
-      saved.doNotDisturb === false
-    ) {
-      e2eLog('selftest-settings-ok', JSON.stringify(saved));
-    } else {
-      e2eLog('selftest-settings-FAIL', JSON.stringify(saved));
-    }
-    // Once the first water reminder shows, exercise the real UI handlers:
-    // Snooze (renderer button -> snooze IPC), then a preview exercise
-    // reminder, then Done. Each step logs from the IPC handlers.
+      saved.workStartHour === 8 && saved.workEndHour === 20,
+      JSON.stringify(saved));
+    const boundsAfterSave = mainWindow.getBounds();
+    check('window-shrinks-to-330-after-save', boundsAfterSave.height === 330,
+      JSON.stringify(boundsAfterSave));
+    // 4. Water reminder: wait for the timed fire, check bubble, Snooze.
     const started = Date.now();
     while (!bubble.visible && Date.now() - started < 30000) {
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      await sleep(250);
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await mainWindow.webContents.executeJavaScript(
-      `document.getElementById('btn-snooze').click()`,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await mainWindow.webContents.executeJavaScript(
-      `window.companion.previewReminder('exercise')`,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    await mainWindow.webContents.executeJavaScript(
-      `document.getElementById('btn-done').click()`,
-    );
+    check('water-reminder-fires', bubble.visible === true);
+    const waterDom = await js(`({
+      title: document.getElementById('bubble-title').textContent,
+      text: document.getElementById('bubble-text').textContent,
+    })`);
+    check('water-bubble-content', waterDom.title === 'Water break' &&
+      waterDom.text === 'Time for a sip of water.', JSON.stringify(waterDom));
+    await js(`document.getElementById('btn-snooze').click()`);
+    await sleep(1200);
+    // Snooze is recorded even if a queued exercise reminder immediately
+    // replaces the water bubble (correct queue behaviour: the next
+    // reminder shows, it does not mean snooze failed). Clear any queued
+    // bubble before the exercise preview step.
+    const snoozeSettings = await js(`window.companion.getSettings()`);
+    check('snooze-recorded', snoozeSettings &&
+      snoozeSettings.snoozedUntilMs !== null &&
+      snoozeSettings.snoozedType === 'water',
+      JSON.stringify(snoozeSettings && snoozeSettings.snoozedUntilMs));
+    const snoozeDom = await js(`({
+      avatarClass: document.getElementById('avatar').className,
+      bubbleTitle: document.getElementById('bubble-title').textContent,
+      bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
+    })`);
+    check('snooze-sleepy-or-queued-exercise',
+      /anim-sleepy/.test(snoozeDom.avatarClass) ||
+      snoozeDom.bubbleHidden === true ||
+      snoozeDom.bubbleTitle === 'Movement break',
+      JSON.stringify(snoozeDom));
+    if (snoozeDom.bubbleHidden !== true) {
+      await js(`document.getElementById('btn-done').click()`);
+      await sleep(800);
+    }
+    // Exercise preview: title, one of the rotating stretches, Done.
+    await js(`window.companion.previewReminder('exercise')`);
+    await sleep(1500);
+    const exDom = await js(`({
+      title: document.getElementById('bubble-title').textContent,
+      text: document.getElementById('bubble-text').textContent,
+    })`);
+    check('exercise-bubble-content', exDom.title === 'Movement break' &&
+      typeof exDom.text === 'string' && exDom.text.length > 10,
+      JSON.stringify(exDom));
+    await js(`document.getElementById('btn-done').click()`);
+    await sleep(800);
+    const doneDom = await js(`({
+      avatarClass: document.getElementById('avatar').className,
+      bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
+    })`);
+    check('done-celebration-animation', /anim-celebrate/.test(doneDom.avatarClass),
+      doneDom.avatarClass);
+    check('done-hides-bubble', doneDom.bubbleHidden === true);
+    // 5. Suppression: DND and quiet mode status text.
+    await js(`window.companion.saveSettings({ doNotDisturb: true })`);
+    await sleep(500);
+    const dndStatus = await js(`document.getElementById('status').textContent`);
+    check('dnd-status', dndStatus === 'Do Not Disturb', dndStatus);
+    await js(`window.companion.saveSettings({ doNotDisturb: false, quietMode: true })`);
+    await sleep(500);
+    const quietStatus = await js(`document.getElementById('status').textContent`);
+    check('quiet-status', quietStatus === 'Quiet mode', quietStatus);
+    await js(`window.companion.saveSettings({ quietMode: false })`);
+    await sleep(500);
+    const backStatus = await js(`document.getElementById('status').textContent`);
+    check('status-back-to-here-with-you', backStatus === 'Here with you', backStatus);
   } catch (err) {
     e2eLog('selftest-error', err.message);
   }
