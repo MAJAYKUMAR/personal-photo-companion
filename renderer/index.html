@@ -21,6 +21,21 @@
     <!-- Reminder speech bubble, hidden until a reminder fires. -->
     <div id="bubble" class="hidden" role="status">
       <div id="bubble-title"></div>
+      <!-- Live animated exercise figure (3D, original SVG, no photo
+           copied from anywhere). Shown for exercise reminders only;
+           hidden for water reminders. -->
+      <div id="bubble-figure" class="hidden" aria-hidden="true">
+        <svg viewBox="0 0 100 140" width="90" height="126">
+          <g class="fig-person">
+            <circle class="fig-head" cx="50" cy="20" r="14" />
+            <rect class="fig-body" x="42" y="34" width="16" height="40" rx="8" />
+            <rect class="fig-arm fig-arm-left" x="28" y="36" width="8" height="34" rx="4" />
+            <rect class="fig-arm fig-arm-right" x="64" y="36" width="8" height="34" rx="4" />
+            <rect class="fig-leg fig-leg-left" x="40" y="74" width="8" height="34" rx="4" />
+            <rect class="fig-leg fig-leg-right" x="52" y="74" width="8" height="34" rx="4" />
+          </g>
+        </svg>
+      </div>
       <div id="bubble-text"></div>
       <div id="bubble-actions">
         <button id="btn-done" type="button">Done ✓</button>

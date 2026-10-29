@@ -1,7 +1,8 @@
 // Personal Photo Companion — renderer logic.
-// Avatar resolution order: assets/avatar.png, then avatar.jpg/jpeg,
-// then the bundled placeholder avatar.svg. Replace avatar.png with your
-// own square photo (same file name) to use a personal photo.
+// Avatar resolution order: generated full-body 3D cartoon character
+// (character-fullbody.png) first, then avatar.png/jpg/jpeg, then the
+// bundled placeholder avatar.svg. The character is shown full-body,
+// top to bottom, not cropped to a circle.
 
 (function () {
   const avatarEl = document.getElementById('avatar');
@@ -19,6 +20,7 @@
   let lastAvatarKey = null;
 
   const AVATAR_CANDIDATES = [
+    '../assets/character-fullbody.png',
     '../assets/avatar.png',
     '../assets/avatar.jpg',
     '../assets/avatar.jpeg',
@@ -114,11 +116,25 @@
     currentReminderType = reminder.type;
     bubbleTitleEl.textContent = reminder.title;
     bubbleTextEl.textContent = reminder.text;
+    // Exercise reminders show the live 3D animated figure doing that
+    // exercise; water reminders show no figure.
+    const figureEl = document.getElementById('bubble-figure');
+    if (figureEl) {
+      figureEl.className = '';
+      if (reminder.type === 'exercise' &&
+          Number.isInteger(reminder.exerciseIndex)) {
+        figureEl.classList.add(`pose-${reminder.exerciseIndex}`);
+      } else {
+        figureEl.classList.add('hidden');
+      }
+    }
     bubbleEl.classList.remove('hidden');
-    // Arrive walking, then wiggle for attention while the bubble shows.
+    // Arrive, then settle to a gentle idle — NO left-right shaking
+    // while the bubble shows (that shaking on a passport photo is
+    // exactly what the user reported as not good).
     setAvatarAnim('anim-walk-in');
     setTimeout(() => {
-      if (!bubbleEl.classList.contains('hidden')) setAvatarAnim('anim-attention');
+      if (!bubbleEl.classList.contains('hidden')) setAvatarAnim('anim-idle');
     }, 1300);
     statusEl.textContent =
       reminder.type === 'water' ? 'Water break' : 'Movement break';
@@ -143,6 +159,8 @@
 
   function hideBubble(keepAnim) {
     bubbleEl.classList.add('hidden');
+    const figureEl = document.getElementById('bubble-figure');
+    if (figureEl) figureEl.classList.add('hidden');
     // Done/Snooze pass keepAnim so their jump/droop can finish;
     // animationend then settles back to idle. All other hides go idle.
     if (!keepAnim) setAvatarAnim('anim-idle');
@@ -231,7 +249,7 @@
     // Grow the window when settings open so Save + photo option are
     // visible; shrink it back when settings close.
     window.companion.resizeWindow(
-      settingsEl.classList.contains('hidden') ? 330 : 700,
+      settingsEl.classList.contains('hidden') ? 330 : 850,
     );
   });
 

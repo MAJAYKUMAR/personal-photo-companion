@@ -81,3 +81,14 @@ pre-checks only. They do not prove installation, the installed path,
 the installed screenshot, or the settings-panel size on a real screen.
 Only sections 1–7 above, run against the installed app, count as a
 live installation check.
+
+## 9. Full-body character + reminder-only visibility (2026-10-29)
+- [ ] Default companion is the generated full-body 3D cartoon character
+      (character-fullbody.png, sitting, head to toe), not a circular
+      passport photo, and it does not shake left-right while a bubble shows.
+- [ ] Companion window is hidden at launch and after Done / Snooze /
+      auto-hide; it appears only for a reminder (grown to 520px so the
+      full-body character plus bubble fit), or via a tray click.
+- [ ] Snooze clears the screen for 10 minutes: no queued reminder pops
+      back immediately; queued reminders flush only when the snooze
+      expires or a later Done is pressed.

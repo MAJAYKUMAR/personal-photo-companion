@@ -25,6 +25,8 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  /* 3D stage: avatar and exercise figure animate in depth, not flat. */
+  perspective: 800px;
 }
 
 #drag-area {
@@ -41,13 +43,14 @@ body {
 }
 
 #avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  object-fit: cover;
+  /* Full-body character, top to bottom — NOT a circular passport crop. */
+  width: 170px;
+  height: 230px;
+  border-radius: 16px;
+  object-fit: contain;
   border: 3px solid #ffffff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  background: #dff3ff;
+  background: transparent;
 }
 
 #status {
@@ -192,8 +195,8 @@ button:hover {
    - success: a happy jump on Done
    - sad: a droop on Snooze / missed reminder */
 @keyframes avatarIdle {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-4px) scale(1.02); }
+  0%, 100% { transform: translateY(0) scale(1) rotateY(0deg) translateZ(0); }
+  50% { transform: translateY(-4px) scale(1.02) rotateY(8deg) translateZ(12px); }
 }
 @keyframes avatarWalkIn {
   0% { transform: translateX(120px) translateY(0); }
@@ -222,19 +225,66 @@ button:hover {
    - Snooze: a sleepy sway in place — slow side-to-side sway, dimming and
      drooping like it's nodding off, then waking back to centre idle. */
 @keyframes avatarCelebrate {
-  0% { transform: translateY(0) rotate(0deg) scale(1); }
-  25% { transform: translateY(-14px) rotate(90deg) scale(1.08); }
-  50% { transform: translateY(0) rotate(180deg) scale(1.12); }
-  75% { transform: translateY(-10px) rotate(270deg) scale(1.08); }
-  100% { transform: translateY(0) rotate(360deg) scale(1); }
+  0% { transform: translateY(0) rotateY(0deg) translateZ(0) scale(1); }
+  25% { transform: translateY(-14px) rotateY(90deg) translateZ(24px) scale(1.08); }
+  50% { transform: translateY(0) rotateY(180deg) translateZ(32px) scale(1.12); }
+  75% { transform: translateY(-10px) rotateY(270deg) translateZ(24px) scale(1.08); }
+  100% { transform: translateY(0) rotateY(360deg) translateZ(0) scale(1); }
 }
 @keyframes avatarSleepy {
-  0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
-  25% { transform: translateX(-6px) translateY(3px) rotate(-3deg); opacity: 0.85; }
-  50% { transform: translateX(6px) translateY(5px) rotate(3deg); opacity: 0.75; }
-  75% { transform: translateX(-4px) translateY(5px) rotate(-2deg); opacity: 0.8; }
-  100% { transform: translateX(0) translateY(5px) rotate(0deg); opacity: 0.85; }
+  0% { transform: translateX(0) translateY(0) rotateY(0deg); opacity: 1; }
+  25% { transform: translateX(-6px) translateY(3px) rotateY(-12deg); opacity: 0.85; }
+  50% { transform: translateX(6px) translateY(5px) rotateY(12deg); opacity: 0.75; }
+  75% { transform: translateX(-4px) translateY(5px) rotateY(-8deg); opacity: 0.8; }
+  100% { transform: translateX(0) translateY(5px) rotateY(0deg); opacity: 0.85; }
 }
+/* 3D exercise figure: the SVG person animates in depth (rotateY /
+   translateZ) with a different live motion per exercise pose. */
+#bubble-figure {
+  display: flex;
+  justify-content: center;
+  perspective: 400px;
+}
+#bubble-figure .fig-person {
+  fill: #2a6fb7;
+  transform-style: preserve-3d;
+  animation: figBase 1.6s ease-in-out infinite;
+}
+#bubble-figure .fig-head { fill: #f2c9a0; }
+@keyframes figBase {
+  0%, 100% { transform: rotateY(-10deg) translateZ(0); }
+  50% { transform: rotateY(10deg) translateZ(10px); }
+}
+#bubble-figure .fig-arm-left, #bubble-figure .fig-arm-right,
+#bubble-figure .fig-leg-left, #bubble-figure .fig-leg-right {
+  transform-box: fill-box;
+}
+#bubble-figure.pose-0 .fig-arm-left { transform-origin: top right; animation: figArmsUp 1.2s ease-in-out infinite; }
+#bubble-figure.pose-0 .fig-arm-right { transform-origin: top left; animation: figArmsUp 1.2s ease-in-out infinite; }
+@keyframes figArmsUp {
+  0%, 100% { transform: rotate(160deg) translateY(0); }
+  50% { transform: rotate(170deg) translateY(-4px); }
+}
+#bubble-figure.pose-1 .fig-person { animation: figRoll 1.2s ease-in-out infinite; }
+@keyframes figRoll { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(8deg); } }
+#bubble-figure.pose-2 .fig-head { transform-box: fill-box; transform-origin: center; animation: figHeadTurn 1.6s ease-in-out infinite; }
+@keyframes figHeadTurn { 0%, 100% { transform: rotateY(-30deg); } 50% { transform: rotateY(30deg); } }
+#bubble-figure.pose-3 .fig-leg-left { transform-origin: top center; animation: figWalk 0.8s ease-in-out infinite alternate; }
+#bubble-figure.pose-3 .fig-leg-right { transform-origin: top center; animation: figWalk 0.8s ease-in-out infinite alternate-reverse; }
+@keyframes figWalk { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } }
+#bubble-figure.pose-4 .fig-person { animation: figSquat 1.4s ease-in-out infinite; }
+@keyframes figSquat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(12px); } }
+#bubble-figure.pose-5 .fig-arm-left, #bubble-figure.pose-5 .fig-arm-right { transform-origin: top center; animation: figWrist 0.8s ease-in-out infinite alternate; }
+@keyframes figWrist { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+#bubble-figure.pose-6 .fig-person { animation: figCalf 1s ease-in-out infinite; }
+@keyframes figCalf { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+#bubble-figure.pose-7 .fig-arm-left, #bubble-figure.pose-7 .fig-arm-right { transform-origin: top center; animation: figShake 0.3s ease-in-out infinite alternate; }
+@keyframes figShake { from { transform: rotate(-15deg); } to { transform: rotate(15deg); } }
+#bubble-figure.pose-8 .fig-person { animation: figTwist 1.6s ease-in-out infinite; }
+@keyframes figTwist { 0%, 100% { transform: rotateY(-35deg); } 50% { transform: rotateY(35deg); } }
+#bubble-figure.pose-9 .fig-leg-left { transform-origin: top center; animation: figMarch 0.6s ease-in-out infinite alternate; }
+#bubble-figure.pose-9 .fig-leg-right { transform-origin: top center; animation: figMarch 0.6s ease-in-out infinite alternate-reverse; }
+@keyframes figMarch { from { transform: rotate(25deg); } to { transform: rotate(-25deg); } }
 @keyframes bubblePop {
   0% { transform: scale(0.9); opacity: 0; }
   70% { transform: scale(1.04); opacity: 1; }

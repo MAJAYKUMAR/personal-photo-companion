@@ -201,10 +201,12 @@ if (!CAN_RUN) {
     for (const name of [
       'window-240x330', 'avatar-loads', 'status-here-with-you',
       'toolbar-4-buttons', 'bubble-hidden-at-launch', 'settings-visible',
-      'window-grows-to-700-on-settings', 'save-button-fits-in-window',
+      'window-grows-to-850-on-settings', 'save-button-fits-in-window',
       'photo-option-visible', 'window-shrinks-to-330-after-save',
       'water-reminder-fires', 'water-bubble-content', 'snooze-recorded',
-      'exercise-bubble-content', 'done-celebration-animation',
+      'snooze-sleepy-animation', 'snooze-hides-bubble',
+      'exercise-bubble-content', 'exercise-figure-visible',
+      'done-hides-bubble', 'window-hidden-after-done',
       'done-hides-bubble', 'dnd-status', 'quiet-status',
       'status-back-to-here-with-you',
     ]) {

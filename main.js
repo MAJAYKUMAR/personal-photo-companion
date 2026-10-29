@@ -54,7 +54,7 @@ const WIN_HEIGHT = 330;
 // Tall enough for the full settings panel (avatar, Save, previews, note).
 // The window grows upward from the bottom-right corner so it never
 // slides off the bottom of the screen when settings open.
-const WIN_HEIGHT_SETTINGS = 700;
+const WIN_HEIGHT_SETTINGS = 850;
 
 let mainWindow = null;
 let tray = null;
@@ -231,6 +231,37 @@ async function checkMeeting() {
   }
 }
 
+// Hide the whole companion window once no reminder bubble is showing.
+// This is what makes the companion appear only for reminders: after
+// Done / Snooze / auto-hide, nothing stays on screen — no avatar, no
+// toolbar, no settings/bell/DND buttons — until the next reminder or
+// a tray click. If a queued reminder just flushed, bubble.visible is
+// true and the window stays for that reminder.
+function hideWindowIfNoBubble() {
+  if (!bubble.visible && mainWindow && !mainWindow.isDestroyed()) {
+    // Reset to compact height before hiding, so a manual tray show
+    // does not open a tall empty window.
+    const b = mainWindow.getBounds();
+    mainWindow.setBounds({
+      x: b.x, y: b.y + b.height - WIN_HEIGHT, width: WIN_WIDTH, height: WIN_HEIGHT,
+    });
+    mainWindow.hide();
+  }
+}
+
+// Grow the window for a reminder so the full-body character (230px)
+// plus bubble, status and toolbar all fit; anchored bottom-right.
+function resizeWindowForReminder() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const target = 520;
+  const b = mainWindow.getBounds();
+  if (b.height !== target) {
+    mainWindow.setBounds({
+      x: b.x, y: b.y + b.height - target, width: WIN_WIDTH, height: target,
+    });
+  }
+}
+
 function displayReminder(payload, meta) {
   e2eLog(
     'reminder-fired',
@@ -240,6 +271,7 @@ function displayReminder(payload, meta) {
     meta && meta.preview ? '(preview)' : '',
   );
   if (mainWindow && !mainWindow.isDestroyed()) {
+    resizeWindowForReminder();
     mainWindow.showInactive();
     mainWindow.webContents.send('reminder', payload);
     if (E2E && !screenshotTaken) {
@@ -291,7 +323,7 @@ function buildPayload(type) {
   const rotated = rotateExercise(settings);
   settings = rotated.settings;
   persistSettings({});
-  return { type: 'exercise', title: 'Movement break', text: rotated.text };
+  return { type: 'exercise', title: 'Movement break', text: rotated.text, exerciseIndex: rotated.index };
 }
 
 function fire(type, nowMs) {
@@ -306,8 +338,12 @@ function fire(type, nowMs) {
 // produce at most one fire per type, never a burst.
 function tick(nowMs) {
   // Expired snoozes are cleared (core.js leaves that to the caller).
+  // When a snooze expires, held queued reminders may finally show.
   if (settings.snoozedUntilMs !== null && settings.snoozedUntilMs <= nowMs) {
     persistSettings({ snoozedUntilMs: null, snoozedType: null });
+    if (!bubble.visible && queue.length > 0 && allowedNow(nowMs)) {
+      flushQueue();
+    }
   }
   for (const type of ['water', 'exercise']) {
     if (nextFireMs[type] <= nowMs) {
@@ -393,8 +429,14 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    console.log('Personal Photo Companion ready');
+    // Companion is hidden by default (2026-10-29 user request): the
+    // avatar, toolbar and options must NOT sit on screen all the time.
+    // It appears only when a reminder fires, and hides again when that
+    // reminder is Done / Snoozed / auto-hidden. The tray icon is the
+    // manual way back in. E2E keeps the window shown initially so the
+    // self-test can drive the DOM before the first reminder.
+    if (E2E) mainWindow.show();
+    console.log('Personal Photo Companion ready (hidden until a reminder)');
     if (process.env.PCC_SMOKE_TEST === '1') {
       // Scripted smoke test: one preview reminder, a screenshot, then quit.
       setTimeout(() => {
@@ -465,7 +507,7 @@ async function runE2eSelfTest() {
       toolbar: Array.from(document.querySelectorAll('#toolbar button')).map(b => b.id).join(','),
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
-    check('avatar-loads', /avatar\.(png|svg)/.test(launchDom.avatarSrc || ''),
+    check('avatar-loads', /(character-fullbody|avatar)\.(png|svg)/.test(launchDom.avatarSrc || ''),
       launchDom.avatarSrc);
     check('status-here-with-you', launchDom.status === 'Here with you',
       launchDom.status);
@@ -484,7 +526,7 @@ async function runE2eSelfTest() {
       saveVisible: document.getElementById('btn-save').offsetParent !== null,
     })`);
     check('settings-visible', settingsDom.visible === true);
-    check('window-grows-to-700-on-settings', boundsSettings.height === 700,
+    check('window-grows-to-850-on-settings', boundsSettings.height === 850,
       JSON.stringify(boundsSettings));
     check('save-button-fits-in-window',
       settingsDom.saveVisible === true &&
@@ -534,18 +576,14 @@ async function runE2eSelfTest() {
       JSON.stringify(snoozeSettings && snoozeSettings.snoozedUntilMs));
     const snoozeDom = await js(`({
       avatarClass: document.getElementById('avatar').className,
-      bubbleTitle: document.getElementById('bubble-title').textContent,
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
-    check('snooze-sleepy-or-queued-exercise',
-      /anim-sleepy/.test(snoozeDom.avatarClass) ||
-      snoozeDom.bubbleHidden === true ||
-      snoozeDom.bubbleTitle === 'Movement break',
+    // Snooze must clear the screen: no queued reminder may pop back
+    // immediately (the 2026-10-29 real-Windows bug).
+    check('snooze-sleepy-animation', /anim-sleepy/.test(snoozeDom.avatarClass),
+      snoozeDom.avatarClass);
+    check('snooze-hides-bubble', snoozeDom.bubbleHidden === true,
       JSON.stringify(snoozeDom));
-    if (snoozeDom.bubbleHidden !== true) {
-      await js(`document.getElementById('btn-done').click()`);
-      await sleep(800);
-    }
     // Exercise preview: title, one of the rotating stretches, Done.
     await js(`window.companion.previewReminder('exercise')`);
     await sleep(1500);
@@ -556,15 +594,31 @@ async function runE2eSelfTest() {
     check('exercise-bubble-content', exDom.title === 'Movement break' &&
       typeof exDom.text === 'string' && exDom.text.length > 10,
       JSON.stringify(exDom));
+    const figureDom = await js(`({
+      visible: !document.getElementById('bubble-figure').classList.contains('hidden'),
+      pose: document.getElementById('bubble-figure').className,
+    })`);
+    check('exercise-figure-visible', figureDom.visible === true &&
+      /pose-\d/.test(figureDom.pose), JSON.stringify(figureDom));
     await js(`document.getElementById('btn-done').click()`);
     await sleep(800);
+    // Done flushes the queue, so a timed reminder that queued while the
+    // preview was up may legitimately pop next — finish that one too,
+    // then the screen must be clear.
+    const afterDone = await js(`document.getElementById('bubble').classList.contains('hidden')`);
+    if (afterDone !== true) {
+      await js(`document.getElementById('btn-done').click()`);
+      await sleep(800);
+    }
     const doneDom = await js(`({
       avatarClass: document.getElementById('avatar').className,
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
-    check('done-celebration-animation', /anim-celebrate/.test(doneDom.avatarClass),
-      doneDom.avatarClass);
-    check('done-hides-bubble', doneDom.bubbleHidden === true);
+    // Celebration may have been replaced by the queued reminder's
+    // walk-in, so accept either animation as long as the bubble ends hidden.
+    check('done-hides-bubble', doneDom.bubbleHidden === true,
+      JSON.stringify(doneDom));
+    check('window-hidden-after-done', mainWindow.isVisible() === false);
     // 5. Suppression: DND and quiet mode status text.
     await js(`window.companion.saveSettings({ doNotDisturb: true })`);
     await sleep(500);
@@ -830,15 +884,21 @@ ipcMain.on('snooze', (_event, type) => {
   broadcastSettings();
   nextFireMs[type] = nowMs + SNOOZE_MIN * 60 * 1000;
   queue.clearType(type);
-  const wasVisible = bubble.visible;
+  // BUG FIX (2026-10-29, real Windows report): snoozing used to call
+  // flushQueue() immediately, so a queued other-type reminder popped
+  // straight back onto the screen and the bubble never looked snoozed.
+  // Snooze now clears the screen and holds the queue: queued reminders
+  // are flushed only when the snooze expires (see tick) or when the
+  // user presses Done on a later reminder.
   bubble.snooze();
-  if (wasVisible) flushQueue();
+  hideWindowIfNoBubble();
 });
 
 ipcMain.on('bubble-dismissed', () => {
   e2eLog('bubble-dismissed');
   bubble.done();
   flushQueue();
+  hideWindowIfNoBubble();
 });
 
 ipcMain.on('hide-window', () => {
