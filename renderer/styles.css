@@ -212,6 +212,26 @@ button:hover {
   0% { transform: translateY(0) rotate(0deg) scale(1); }
   100% { transform: translateY(5px) rotate(-4deg) scale(0.97); }
 }
+/* Directional exits, matching the reference behaviour:
+   - Done / YES: walk to the RIGHT side, happy, with a walking bob
+   - Snooze / Remind me later: dull mood, walk to the LEFT side, drooping
+   The avatar moves within the window, then settles back to centre idle
+   (the companion stays visible between reminders, unlike a character
+   that disappears completely after a reminder). */
+@keyframes avatarWalkRight {
+  0% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(20px) translateY(-6px); }
+  50% { transform: translateX(40px) translateY(0); }
+  75% { transform: translateX(55px) translateY(-6px); }
+  100% { transform: translateX(60px) translateY(0); }
+}
+@keyframes avatarWalkLeftSad {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  25% { transform: translateX(-20px) translateY(2px) rotate(-2deg); }
+  50% { transform: translateX(-40px) translateY(5px) rotate(-4deg); }
+  75% { transform: translateX(-55px) translateY(5px) rotate(-4deg); }
+  100% { transform: translateX(-60px) translateY(5px) rotate(-4deg) scale(0.97); }
+}
 @keyframes bubblePop {
   0% { transform: scale(0.9); opacity: 0; }
   70% { transform: scale(1.04); opacity: 1; }
@@ -231,6 +251,12 @@ button:hover {
 }
 #avatar.anim-sad {
   animation: avatarSad 0.6s ease-out forwards;
+}
+#avatar.anim-walk-right {
+  animation: avatarWalkRight 1.2s ease-out forwards;
+}
+#avatar.anim-walk-left-sad {
+  animation: avatarWalkLeftSad 1.2s ease-out forwards;
 }
 #bubble:not(.hidden) {
   animation: bubblePop 0.35s ease-out;
