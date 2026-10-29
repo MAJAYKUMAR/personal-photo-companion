@@ -61,24 +61,51 @@ body {
   border-radius: 999px;
 }
 
+/* OVERLAY MODE (like the screenshot): no card, no box, no background
+   rectangle — just the person, floating over the desktop, with the
+   reminder text and pill buttons above them. The window is already
+   transparent; this CSS removes every remaining box. */
 #bubble {
   width: 220px;
-  background: linear-gradient(180deg, #ffffff 0%, #eaf6ff 100%);
-  border-radius: 20px;
-  padding: 12px 14px;
-  box-shadow: 0 12px 28px rgba(20, 60, 100, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0 4px 6px;
+  text-align: center;
   -webkit-app-region: no-drag;
 }
 #bubble-photo, #bubble-video {
-  width: 150px;
-  height: 190px;
-  object-fit: cover;
-  border-radius: 16px;
+  width: 170px;
+  height: 230px;
+  object-fit: contain;
+  border-radius: 0;
   display: block;
-  margin: 4px auto 8px;
-  box-shadow: 0 8px 20px rgba(20, 60, 100, 0.25);
-  background: #eef2f5;
+  margin: 0 auto 4px;
+  box-shadow: none;
+  background: transparent;
+}
+#bubble-title {
+  font-size: 17px;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.9);
+}
+#bubble-text {
+  font-size: 14px;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.9);
+}
+#bubble-actions { justify-content: center; }
+#bubble-actions button {
+  background: #ffffff;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  padding: 7px 14px;
+  font-weight: 600;
+}
+#avatar {
+  border: none;
+  box-shadow: none;
 }
 #bubble-photo.pose-4, #bubble-video.pose-4 {
   animation: photoSquat 1.4s ease-in-out infinite;

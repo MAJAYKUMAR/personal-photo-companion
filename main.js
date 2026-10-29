@@ -507,7 +507,7 @@ async function runE2eSelfTest() {
       toolbar: Array.from(document.querySelectorAll('#toolbar button')).map(b => b.id).join(','),
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
-    check('avatar-loads', /(character-fullbody|avatar)\.(png|svg)/.test(launchDom.avatarSrc || ''),
+    check('avatar-loads', /(character-fullbody(-cutout)?|avatar)\.(png|svg)/.test(launchDom.avatarSrc || ''),
       launchDom.avatarSrc);
     check('status-here-with-you', launchDom.status === 'Here with you',
       launchDom.status);

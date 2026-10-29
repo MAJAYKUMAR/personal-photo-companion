@@ -20,6 +20,7 @@
   let lastAvatarKey = null;
 
   const AVATAR_CANDIDATES = [
+    '../assets/character-fullbody-cutout.png',
     '../assets/character-fullbody.png',
     '../assets/avatar.png',
     '../assets/avatar.jpg',
@@ -124,13 +125,23 @@
     const photoEl = document.getElementById('bubble-photo');
     const videoEl = document.getElementById('bubble-video');
     const EXERCISE_PHOTOS = [
-      'ex0-arms-overhead.png', 'ex1-shoulder-rolls.png',
-      'ex2-neck-turns.png', 'ex3-walk-around.png',
-      'ex4-chair-squats.png',
+      'ex0-arms-overhead-cutout.png', 'ex1-shoulder-rolls-cutout.png',
+      'ex2-neck-turns-cutout.png', 'ex3-walk-around-cutout.png',
+      'ex4-chair-squats-cutout.png',
     ];
+    // Overlay mode: the bubble photo IS the person — hide the main
+    // avatar so there is only one person on screen, never two.
+    const avatarEl = document.getElementById('avatar');
+    if (avatarEl) avatarEl.classList.add('hidden');
     if (photoEl) photoEl.classList.add('hidden');
     if (videoEl) { videoEl.classList.add('hidden'); videoEl.pause(); videoEl.removeAttribute('src'); }
     if (figureEl) figureEl.classList.add('hidden');
+    if (reminder.type === 'water' && photoEl) {
+      // Water: the same full-body character, cut out, floating over
+      // the desktop — no box, just the person + text + buttons.
+      photoEl.src = '../assets/character-fullbody-cutout.png';
+      photoEl.className = '';
+    }
     if (reminder.type === 'exercise' &&
         Number.isInteger(reminder.exerciseIndex)) {
       const idx = reminder.exerciseIndex;
