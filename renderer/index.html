@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self'; img-src 'self' data:; script-src 'self'"
+  />
+  <title>Personal Photo Companion</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="companion">
+    <!-- Drag region: the avatar area moves the window. Buttons opt out. -->
+    <div id="drag-area">
+      <img id="avatar" alt="Your companion" />
+      <div id="status">Here with you</div>
+    </div>
+
+    <!-- Reminder speech bubble, hidden until a reminder fires. -->
+    <div id="bubble" class="hidden" role="status">
+      <div id="bubble-title"></div>
+      <div id="bubble-text"></div>
+      <div id="bubble-actions">
+        <button id="btn-done" type="button">Done ✓</button>
+        <button id="btn-snooze" type="button">Snooze 10 min</button>
+      </div>
+    </div>
+
+    <div id="toolbar">
+      <button id="btn-settings" type="button" title="Settings">⚙</button>
+      <button id="btn-quiet" type="button" title="Toggle quiet mode">🔕</button>
+      <button id="btn-dnd" type="button" title="Do Not Disturb: meeting / screen share">DND</button>
+      <button id="btn-hide" type="button" title="Hide companion">✕</button>
+    </div>
+
+    <!-- Settings panel, hidden until the gear button is pressed. -->
+    <form id="settings" class="hidden">
+      <label>
+        Water reminder (minutes)
+        <input id="in-water" type="number" min="1" max="480" step="1" />
+      </label>
+      <label>
+        Exercise reminder (minutes)
+        <input id="in-exercise" type="number" min="1" max="480" step="1" />
+      </label>
+      <label>
+        Working hours start
+        <input id="in-start" type="number" min="0" max="23" step="1" />
+      </label>
+      <label>
+        Working hours end
+        <input id="in-end" type="number" min="1" max="24" step="1" />
+      </label>
+      <label class="checkbox-row">
+        <input id="in-quiet" type="checkbox" /> Quiet mode (pause reminders)
+      </label>
+      <label class="checkbox-row">
+        <input id="in-dnd" type="checkbox" /> Do Not Disturb — meeting / screen share
+      </label>
+      <label class="checkbox-row">
+        <input id="in-auto-meeting" type="checkbox" /> Auto meeting detection — pause during Zoom / Meet / Teams
+      </label>
+      <label>
+        Companion photo
+        <select id="in-avatar">
+          <option value="placeholder">Placeholder (built-in)</option>
+          <option value="custom">Upload your photo…</option>
+        </select>
+      </label>
+      <div class="settings-actions">
+        <button id="btn-preview-water" type="button">Preview 💧</button>
+        <button id="btn-preview-exercise" type="button">Preview 🏃</button>
+        <button id="btn-save" type="submit">Save</button>
+      </div>
+      <p class="note">
+        Photo: choose "Upload your photo…" above to pick a PNG/JPG (it is
+        copied into the app's own storage, on-device only). Placeholder
+        stays the default until you upload one. Auto detection looks for
+        meeting window titles; if it ever misses a meeting, Do Not
+        Disturb is the reliable fallback.
+      </p>
+    </form>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
