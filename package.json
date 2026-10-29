@@ -40,7 +40,7 @@
     "test:python": "python3 tests/check_build.py",
     "test:all": "npm test && npm run test:python",
     "package:linux": "electron-builder --linux AppImage",
-    "package:win": "electron-builder --win nsis",
+    "package:win": "electron-builder --win nsis --publish=never",
     "package:win-dir": "electron-builder --win --dir",
     "package:mac": "electron-builder --mac dmg",
     "package:mac-zip": "electron-builder --mac zip",
