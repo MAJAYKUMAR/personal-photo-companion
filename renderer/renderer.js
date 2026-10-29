@@ -90,8 +90,8 @@
       'anim-attention',
       'anim-success',
       'anim-sad',
-      'anim-walk-right',
-      'anim-walk-left-sad',
+      'anim-celebrate',
+      'anim-sleepy',
     );
     avatarEl.classList.add(name);
   }
@@ -101,10 +101,10 @@
         event.animationName === 'avatarSad') {
       setAvatarAnim('anim-idle');
     }
-    // Directional exits pause at the side, then return to centre idle.
-    if (event.animationName === 'avatarWalkRight' ||
-        event.animationName === 'avatarWalkLeftSad') {
-      setTimeout(() => setAvatarAnim('anim-idle'), 800);
+    // Unique exits settle back to centre idle when they finish.
+    if (event.animationName === 'avatarCelebrate' ||
+        event.animationName === 'avatarSleepy') {
+      setAvatarAnim('anim-idle');
     }
   });
   // On load the companion walks in, then settles into idle bobbing.
@@ -210,18 +210,19 @@
   });
 
   document.getElementById('btn-done').addEventListener('click', () => {
-    // YES / Done: walk to the RIGHT side, happy, with a walking bob.
-    // Bubble hides immediately but the walk finishes first (keepAnim),
-    // then it pauses at the right and returns to centre idle.
-    setAvatarAnim('anim-walk-right');
+    // Unique Done reaction: celebration spin-jump in place, not a
+    // walk to a side. Bubble hides immediately but the spin finishes
+    // first (keepAnim), then animationend settles back to idle.
+    setAvatarAnim('anim-celebrate');
     hideBubble(true);
     window.companion.bubbleDismissed();
   });
 
   document.getElementById('btn-snooze').addEventListener('click', () => {
     if (currentReminderType) window.companion.snooze(currentReminderType);
-    // Remind me later / Snooze: dull mood, walk to the LEFT side.
-    setAvatarAnim('anim-walk-left-sad');
+    // Unique Snooze reaction: sleepy sway in place, dimming and drooping
+    // like it's nodding off, then waking back to centre idle.
+    setAvatarAnim('anim-sleepy');
     hideBubble(true);
   });
 

@@ -212,25 +212,24 @@ button:hover {
   0% { transform: translateY(0) rotate(0deg) scale(1); }
   100% { transform: translateY(5px) rotate(-4deg) scale(0.97); }
 }
-/* Directional exits, matching the reference behaviour:
-   - Done / YES: walk to the RIGHT side, happy, with a walking bob
-   - Snooze / Remind me later: dull mood, walk to the LEFT side, drooping
-   The avatar moves within the window, then settles back to centre idle
-   (the companion stays visible between reminders, unlike a character
-   that disappears completely after a reminder). */
-@keyframes avatarWalkRight {
-  0% { transform: translateX(0) translateY(0); }
-  25% { transform: translateX(20px) translateY(-6px); }
-  50% { transform: translateX(40px) translateY(0); }
-  75% { transform: translateX(55px) translateY(-6px); }
-  100% { transform: translateX(60px) translateY(0); }
+/* Unique to this app (NOT a copy of another product's exits):
+   - Done: a celebration spin-jump in place — spin once, jump, pop bigger,
+     land back in the centre. No walking off to a side.
+   - Snooze: a sleepy sway in place — slow side-to-side sway, dimming and
+     drooping like it's nodding off, then waking back to centre idle. */
+@keyframes avatarCelebrate {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  25% { transform: translateY(-14px) rotate(90deg) scale(1.08); }
+  50% { transform: translateY(0) rotate(180deg) scale(1.12); }
+  75% { transform: translateY(-10px) rotate(270deg) scale(1.08); }
+  100% { transform: translateY(0) rotate(360deg) scale(1); }
 }
-@keyframes avatarWalkLeftSad {
-  0% { transform: translateX(0) translateY(0) rotate(0deg); }
-  25% { transform: translateX(-20px) translateY(2px) rotate(-2deg); }
-  50% { transform: translateX(-40px) translateY(5px) rotate(-4deg); }
-  75% { transform: translateX(-55px) translateY(5px) rotate(-4deg); }
-  100% { transform: translateX(-60px) translateY(5px) rotate(-4deg) scale(0.97); }
+@keyframes avatarSleepy {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+  25% { transform: translateX(-6px) translateY(3px) rotate(-3deg); opacity: 0.85; }
+  50% { transform: translateX(6px) translateY(5px) rotate(3deg); opacity: 0.75; }
+  75% { transform: translateX(-4px) translateY(5px) rotate(-2deg); opacity: 0.8; }
+  100% { transform: translateX(0) translateY(5px) rotate(0deg); opacity: 0.85; }
 }
 @keyframes bubblePop {
   0% { transform: scale(0.9); opacity: 0; }
@@ -252,11 +251,11 @@ button:hover {
 #avatar.anim-sad {
   animation: avatarSad 0.6s ease-out forwards;
 }
-#avatar.anim-walk-right {
-  animation: avatarWalkRight 1.2s ease-out forwards;
+#avatar.anim-celebrate {
+  animation: avatarCelebrate 1.2s ease-out forwards;
 }
-#avatar.anim-walk-left-sad {
-  animation: avatarWalkLeftSad 1.2s ease-out forwards;
+#avatar.anim-sleepy {
+  animation: avatarSleepy 1.6s ease-in-out forwards;
 }
 #bubble:not(.hidden) {
   animation: bubblePop 0.35s ease-out;
