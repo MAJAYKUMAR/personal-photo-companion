@@ -1,0 +1,50 @@
+{
+  "author": "Personal Photo Companion",
+  "build": {
+    "appId": "com.example.personal-photo-companion",
+    "asar": false,
+    "files": [
+      "main.js",
+      "core.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "category": "Utility",
+      "target": "AppImage"
+    },
+    "mac": {
+      "category": "public.app-category.healthcare-fitness",
+      "target": "dmg"
+    },
+    "productName": "Personal Photo Companion",
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "description": "A small cross-platform desktop companion that pops in with water and exercise reminders. On-device only: no accounts, no analytics, no network calls.",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "license": "MIT",
+  "main": "main.js",
+  "name": "personal-photo-companion",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/core.test.js tests/e2e-smoke.test.js",
+    "test:unit": "node --test tests/core.test.js",
+    "test:e2e": "node --test tests/e2e-smoke.test.js",
+    "test:python": "python3 tests/check_build.py",
+    "test:all": "npm test && npm run test:python",
+    "package:linux": "electron-builder --linux AppImage",
+    "package:win": "electron-builder --win nsis",
+    "package:win-dir": "electron-builder --win --dir",
+    "package:mac": "electron-builder --mac dmg",
+    "package:mac-zip": "electron-builder --mac zip",
+    "package:mac-dir": "electron-builder --mac --dir"
+  },
+  "version": "1.0.0"
+}
