@@ -57,7 +57,6 @@ jobs:
         run: npm run package:win
 
       - name: Install silently and launch installed app (PCC_E2E self-test)
-        continue-on-error: true
         shell: pwsh
         run: |
           $env:PCC_E2E = '1'
@@ -68,9 +67,33 @@ jobs:
           $env:PCC_E2E_SCREENSHOT = "$env:GITHUB_WORKSPACE\installed-launch-shot.png"
           $env:ELECTRON_DISABLE_SANDBOX = '1'
           $installer = Get-ChildItem dist\*.exe | Where-Object { $_.Name -like '*Setup*' } | Select-Object -First 1 -ExpandProperty FullName
-          Start-Process -FilePath $installer -ArgumentList '/S' -Wait
-          $exe = "$env:LOCALAPPDATA\Programs\Personal Photo Companion\Personal Photo Companion.exe"
-          if (-not (Test-Path $exe)) { Write-Error "Installed exe not found: $exe"; exit 1 }
+          $installProcess = Start-Process -FilePath $installer -ArgumentList '/S' -Wait -PassThru
+          Write-Output "Installer exited with code $($installProcess.ExitCode)"
+          $programsFolders = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs" -Directory -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          Write-Output "Folders under $env:LOCALAPPDATA\Programs:"
+          $programsFolders | ForEach-Object { Write-Output $_ }
+          Write-Output "Uninstall registry entries for Personal Photo Companion:"
+          foreach ($hive in @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall')) {
+            Get-ChildItem -Path $hive -ErrorAction SilentlyContinue | ForEach-Object {
+              $displayName = (Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue).DisplayName
+              if ($displayName -like '*Personal Photo Companion*') { Write-Output "$hive : $displayName" }
+            }
+          }
+          $searchRoots = @("$env:LOCALAPPDATA\Programs", $env:ProgramFiles, ${env:ProgramFiles(x86)})
+          $exe = $null
+          foreach ($root in $searchRoots) {
+            $found = Get-ChildItem -Path $root -Recurse -Filter 'Personal Photo Companion.exe' -File -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+            if ($found) { $exe = $found; break }
+          }
+          if (-not $exe) {
+            Write-Output "Search roots: $($searchRoots -join ', ')"
+            Write-Output "Folders under $env:LOCALAPPDATA\Programs:"
+            $programsFolders | ForEach-Object { Write-Output $_ }
+            Write-Output "Installer exited with code $($installProcess.ExitCode)"
+            Write-Error "Installed exe not found"
+            exit 1
+          }
+          Write-Output "Found installed exe: $exe"
           $p = Start-Process -FilePath $exe -ArgumentList '--no-sandbox','--disable-gpu' -PassThru -NoNewWindow
           if (-not ($p.WaitForExit(90000))) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; exit 1 }
           Write-Output "Installed exe exited with code $($p.ExitCode)"
