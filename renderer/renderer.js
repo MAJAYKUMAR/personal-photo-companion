@@ -80,11 +80,39 @@
   loadAvatar(0);
   lastAvatarKey = 'placeholder|';
 
+  // Animation states: only one anim-* class at a time. One-shot states
+  // (walk-in, success, sad) fall back to idle when they finish; attention
+  // runs while a reminder bubble is showing.
+  function setAvatarAnim(name) {
+    avatarEl.classList.remove(
+      'anim-idle',
+      'anim-walk-in',
+      'anim-attention',
+      'anim-success',
+      'anim-sad',
+    );
+    avatarEl.classList.add(name);
+  }
+  avatarEl.addEventListener('animationend', (event) => {
+    if (event.animationName === 'avatarWalkIn' ||
+        event.animationName === 'avatarSuccess' ||
+        event.animationName === 'avatarSad') {
+      setAvatarAnim('anim-idle');
+    }
+  });
+  // On load the companion walks in, then settles into idle bobbing.
+  setAvatarAnim('anim-walk-in');
+
   function showBubble(reminder) {
     currentReminderType = reminder.type;
     bubbleTitleEl.textContent = reminder.title;
     bubbleTextEl.textContent = reminder.text;
     bubbleEl.classList.remove('hidden');
+    // Arrive walking, then wiggle for attention while the bubble shows.
+    setAvatarAnim('anim-walk-in');
+    setTimeout(() => {
+      if (!bubbleEl.classList.contains('hidden')) setAvatarAnim('anim-attention');
+    }, 1300);
     statusEl.textContent =
       reminder.type === 'water' ? 'Water break' : 'Movement break';
     if (bubbleTimer) clearTimeout(bubbleTimer);
@@ -106,8 +134,11 @@
     return 'Here with you';
   }
 
-  function hideBubble() {
+  function hideBubble(keepAnim) {
     bubbleEl.classList.add('hidden');
+    // Done/Snooze pass keepAnim so their jump/droop can finish;
+    // animationend then settles back to idle. All other hides go idle.
+    if (!keepAnim) setAvatarAnim('anim-idle');
     statusEl.textContent = statusText(settings);
     currentReminderType = null;
     if (bubbleTimer) {
@@ -172,13 +203,17 @@
   });
 
   document.getElementById('btn-done').addEventListener('click', () => {
-    hideBubble();
+    // Happy jump, bubble hides immediately but the jump finishes first
+    // (keepAnim), then animationend settles back to idle.
+    setAvatarAnim('anim-success');
+    hideBubble(true);
     window.companion.bubbleDismissed();
   });
 
   document.getElementById('btn-snooze').addEventListener('click', () => {
     if (currentReminderType) window.companion.snooze(currentReminderType);
-    hideBubble();
+    setAvatarAnim('anim-sad');
+    hideBubble(true);
   });
 
   document.getElementById('btn-settings').addEventListener('click', () => {

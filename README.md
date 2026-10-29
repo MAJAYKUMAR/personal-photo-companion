@@ -10,6 +10,11 @@ assets from any other product are used here.
 
 - A small floating companion window (always on top, draggable by the avatar
   area, dismissible with the ✕ button) showing a photo avatar.
+- **Animated companion (original CSS animation):** the avatar walks in on
+  load and on every reminder, bobs gently while idle, wiggles for attention
+  while a reminder bubble is showing, jumps happily on Done, and droops on
+  Snooze. The bubble pops in with it. No video clips from any other
+  product are used.
 - **Water reminders** on a configurable interval (default: every 45 minutes),
   shown as a speech bubble with **Done ✓** and **Snooze 10 min** actions.
 - **Exercise reminders** every 60 minutes by default, each showing one short
@@ -64,7 +69,8 @@ app instead, so you are never left with an invisible running app.
 ## Use your own photo (the whole point)
 
 The app ships with a simple placeholder face (`assets/avatar.png`, with
-`assets/avatar.svg` as a fallback), which stays the default in V1.
+`assets/avatar.svg` as a fallback), which stays the default until you
+upload your own photo.
 
 To use your own photo, in the app: open Settings (gear button), set
 **Companion photo** to "Upload your photo…", and pick a PNG or JPG (up to
