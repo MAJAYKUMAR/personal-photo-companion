@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Original placeholder avatar (fallback if avatar.png is removed). -->
+  <circle cx="128" cy="128" r="120" fill="#bfe3ff" stroke="#ffffff" stroke-width="10"/>
+  <circle cx="88" cy="112" r="16" fill="#222222"/>
+  <circle cx="168" cy="112" r="16" fill="#222222"/>
+  <path d="M 88 150 Q 128 185 168 150" fill="none" stroke="#222222" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="68" cy="151" r="16" fill="#ffaaaa"/>
+  <circle cx="188" cy="151" r="16" fill="#ffaaaa"/>
+  <circle cx="200" cy="205" r="20" fill="#2a8cff"/>
+  <polygon points="200,172 182,198 218,198" fill="#2a8cff"/>
+</svg>
