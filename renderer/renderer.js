@@ -228,6 +228,11 @@
 
   document.getElementById('btn-settings').addEventListener('click', () => {
     settingsEl.classList.toggle('hidden');
+    // Grow the window when settings open so Save + photo option are
+    // visible; shrink it back when settings close.
+    window.companion.resizeWindow(
+      settingsEl.classList.contains('hidden') ? 330 : 620,
+    );
   });
 
   document.getElementById('btn-hide').addEventListener('click', () => {
@@ -274,6 +279,7 @@
       settings = data;
       fillSettingsForm(data);
       settingsEl.classList.add('hidden');
+      window.companion.resizeWindow(330);
     });
   });
 })();

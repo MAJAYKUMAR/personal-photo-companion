@@ -51,6 +51,10 @@ const E2E = process.env.PCC_E2E === '1';
 const TICK_MS = 30 * 1000;
 const WIN_WIDTH = 240;
 const WIN_HEIGHT = 330;
+// Tall enough for the full settings panel (avatar, Save, previews, note).
+// The window grows upward from the bottom-right corner so it never
+// slides off the bottom of the screen when settings open.
+const WIN_HEIGHT_SETTINGS = 620;
 
 let mainWindow = null;
 let tray = null;
@@ -644,6 +648,25 @@ app.on('before-quit', () => {
 });
 
 ipcMain.handle('get-settings', () => publicSettings());
+
+// Resize the window, anchored at its bottom-right corner. Used when the
+// settings panel opens/closes: the panel is taller than the compact
+// 330px window, so without this the Save button and photo option are
+// cut off below the window edge (body overflow is hidden).
+ipcMain.handle('resize-window', (_event, height) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const target = Math.min(
+    WIN_HEIGHT_SETTINGS,
+    Math.max(WIN_HEIGHT, Math.round(Number(height) || WIN_HEIGHT)),
+  );
+  const b = mainWindow.getBounds();
+  mainWindow.setBounds({
+    x: b.x,
+    y: b.y + b.height - target,
+    width: WIN_WIDTH,
+    height: target,
+  });
+});
 
 ipcMain.handle('save-settings', (_event, next) => {
   return applySettings(next || {});

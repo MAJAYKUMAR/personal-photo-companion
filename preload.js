@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('companion', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
+  resizeWindow: (height) => ipcRenderer.invoke('resize-window', height),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   pickAvatarPhoto: () => ipcRenderer.invoke('pick-avatar-photo'),
   getCustomAvatar: () => ipcRenderer.invoke('get-custom-avatar'),

@@ -140,6 +140,10 @@ button:hover {
   flex-direction: column;
   gap: 8px;
   -webkit-app-region: no-drag;
+  /* Safety net: even if the window resize ever fails, the panel scrolls
+     instead of cutting off Save and the photo option below the edge. */
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
 }
 
 #settings label {
