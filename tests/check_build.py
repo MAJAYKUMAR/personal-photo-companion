@@ -14,6 +14,12 @@ Checks (stdlib only, no third-party packages):
 Usage:
     python3 tests/check_build.py [--dist DIR]
 
+On a Windows runner (sys.platform == "win32"), the macOS zip check is
+reported as a warning, not a failure: a Windows-only workflow cannot
+build a Mac zip, so failing the whole run for its absence would make
+every Windows run fail for a platform it never builds. On other
+platforms the Mac check stays a failure, as before.
+
 Exit code 0 only when every FAIL-level check passes. WARN-level items are
 reported but do not fail the run (e.g. a missing optional Linux AppImage).
 
@@ -263,7 +269,11 @@ def main():
         print(f"[FAIL] dist directory missing: {dist_dir} (run a package script first)")
         return 1
     verify_windows(dist_dir, repo_root)
-    verify_mac(dist_dir, repo_root)
+    if sys.platform == "win32":
+        warn("mac: zip package exists",
+             "skipped on Windows runner; a Windows-only build cannot produce a Mac zip")
+    else:
+        verify_mac(dist_dir, repo_root)
     verify_linux(dist_dir)
     verify_source_hygiene(repo_root)
     print(f"\n{len(failures)} failure(s), {len(warnings)} warning(s)")
