@@ -98,9 +98,9 @@ jobs:
           if (-not ($p.WaitForExit(90000))) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; exit 1 }
           Write-Output "Installed exe exited with code $($p.ExitCode)"
           if ($p.ExitCode -ne 0) { exit $p.ExitCode }
-        - name: Verify silent uninstall (runner only)
-        shell: pwsh
-                run: |
+      - name: Verify silent uninstall (runner only)
+      shell: pwsh
+              run: |
       $installedFolder = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -like '*personal-photo-companion*' } | Select-Object -First 1
           if (-not $installedFolder) { Write-Error "Installed folder not found under $env:LOCALAPPDATA\Programs"; exit 1 }
             Write-Output "Found installed folder: $($installedFolder.FullName)"
@@ -110,9 +110,9 @@ jobs:
         $uninstallProcess = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
         Write-Output "Uninstaller exited with code $($uninstallProcess.ExitCode)"
         if (Test-Path $installedFolder.FullName) { Write-Error "Silent uninstall failed: installed folder still exists: $($installedFolder.FullName)"; exit 1 }
-      $remainingEntries = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall') | ForEach-Object { Get-ChildItem -Path $_ -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue).DisplayName -like '*Personal Photo Companion*' } }
-      if ($remainingEntries) { Write-Error "Silent uninstall failed: uninstall registry entries remain"; exit 1 }
-            Write-Output "Silent uninstall verified: installed folder and uninstall registry entries are gone."
+        $remainingEntries = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall') | ForEach-Object { Get-ChildItem -Path $_ -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue).DisplayName -like '*Personal Photo Companion*' } }
+        if ($remainingEntries) { Write-Error "Silent uninstall failed: uninstall registry entries remain"; exit 1 }
+              Write-Output "Silent uninstall verified: installed folder and uninstall registry entries are gone."
     
 - name: Python artifact checks
   run: python tests/check_build.py --dist dist
