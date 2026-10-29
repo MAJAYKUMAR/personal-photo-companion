@@ -56,6 +56,26 @@ jobs:
       - name: Build Windows NSIS installer
         run: npm run package:win
 
+      - name: Install silently and launch installed app (PCC_E2E self-test)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $env:PCC_E2E = '1'
+          $env:PCC_E2E_WATER_MS = '8000'
+          $env:PCC_E2E_EXERCISE_MS = '8500'
+          $env:PCC_E2E_AUTOHIDE_MS = '4000'
+          $env:PCC_E2E_EXIT_MS = '45000'
+          $env:PCC_E2E_SCREENSHOT = "$env:GITHUB_WORKSPACE\installed-launch-shot.png"
+          $env:ELECTRON_DISABLE_SANDBOX = '1'
+          $installer = Get-ChildItem dist\*.exe | Where-Object { $_.Name -like '*Setup*' } | Select-Object -First 1 -ExpandProperty FullName
+          Start-Process -FilePath $installer -ArgumentList '/S' -Wait
+          $exe = "$env:LOCALAPPDATA\Programs\Personal Photo Companion\Personal Photo Companion.exe"
+          if (-not (Test-Path $exe)) { Write-Error "Installed exe not found: $exe"; exit 1 }
+          $p = Start-Process -FilePath $exe -ArgumentList '--no-sandbox','--disable-gpu' -PassThru -NoNewWindow
+          if (-not ($p.WaitForExit(90000))) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; exit 1 }
+          Write-Output "Installed exe exited with code $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
+
       - name: Python artifact checks
         run: python tests/check_build.py --dist dist
 
@@ -89,4 +109,5 @@ jobs:
           path: |
             dist/
             windows-launch-shot.png
+            installed-launch-shot.png
           if-no-files-found: warn
