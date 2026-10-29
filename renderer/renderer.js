@@ -135,6 +135,9 @@
     if (avatarEl) avatarEl.classList.add('hidden');
     if (photoEl) photoEl.classList.add('hidden');
     if (videoEl) { videoEl.classList.add('hidden'); videoEl.pause(); videoEl.removeAttribute('src'); }
+    const canvasEl = document.getElementById('bubble-canvas');
+    if (canvasEl) canvasEl.classList.add('hidden');
+    if (window.__pccVideoLoop) { cancelAnimationFrame(window.__pccVideoLoop); window.__pccVideoLoop = 0; }
     if (figureEl) figureEl.classList.add('hidden');
     if (reminder.type === 'water' && photoEl) {
       // Water: the same full-body character, cut out, floating over
@@ -145,11 +148,36 @@
     if (reminder.type === 'exercise' &&
         Number.isInteger(reminder.exerciseIndex)) {
       const idx = reminder.exerciseIndex;
-      if (idx === 4 && videoEl) {
-        videoEl.src = '../assets/exercises/ex4-chair-squats.mp4';
-        videoEl.classList.remove('hidden');
-        videoEl.classList.add('pose-4');
-        videoEl.play().catch(() => {});
+      // REA pattern, original clips only: pre-rendered video clips,
+      // played through a canvas chromakey so only the person shows.
+      const EXERCISE_VIDEOS = [
+        'ex0-arms-overhead.mp4', 'ex1-shoulder-rolls.mp4',
+        'ex2-neck-turns.mp4', 'ex3-walk-around.mp4',
+        'ex4-chair-squats-green.mp4',
+      ];
+      const KEY_COLORS = [
+        [214, 211, 210], [214, 211, 210], [214, 211, 210],
+        [214, 211, 210], [41, 171, 34],
+      ];
+      if (EXERCISE_VIDEOS[idx] && videoEl && canvasEl) {
+        const ctx = canvasEl.getContext('2d');
+        videoEl.src = `../assets/exercises/${EXERCISE_VIDEOS[idx]}`;
+        videoEl.muted = true; videoEl.loop = true;
+        canvasEl.classList.remove('hidden');
+        const draw = () => {
+          if (videoEl.paused || videoEl.ended) return;
+          ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+          const frame = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+          const d = frame.data; const kc = KEY_COLORS[idx];
+          for (let i = 0; i < d.length; i += 4) {
+            const dr = d[i] - kc[0], dg = d[i + 1] - kc[1], db = d[i + 2] - kc[2];
+            if (Math.sqrt(dr * dr + dg * dg + db * db) < 42) d[i + 3] = 0;
+          }
+          ctx.putImageData(frame, 0, 0);
+          window.__pccVideoLoop = requestAnimationFrame(draw);
+        };
+        videoEl.onloadeddata = () => { videoEl.play().then(draw).catch(() => {}); };
+        videoEl.load();
       } else if (EXERCISE_PHOTOS[idx] && photoEl) {
         photoEl.src = `../assets/exercises/${EXERCISE_PHOTOS[idx]}`;
         photoEl.className = '';
@@ -196,6 +224,9 @@
     if (photoEl) photoEl.classList.add('hidden');
     const videoEl = document.getElementById('bubble-video');
     if (videoEl) { videoEl.classList.add('hidden'); videoEl.pause(); }
+    if (window.__pccVideoLoop) { cancelAnimationFrame(window.__pccVideoLoop); window.__pccVideoLoop = 0; }
+    const canvasEl = document.getElementById('bubble-canvas');
+    if (canvasEl) canvasEl.classList.add('hidden');
     // Done/Snooze pass keepAnim so their jump/droop can finish;
     // animationend then settles back to idle. All other hides go idle.
     if (!keepAnim) setAvatarAnim('anim-idle');

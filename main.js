@@ -599,9 +599,11 @@ async function runE2eSelfTest() {
       photoVisible: !document.getElementById('bubble-photo').classList.contains('hidden'),
       photoSrc: document.getElementById('bubble-photo').src,
       videoVisible: !document.getElementById('bubble-video').classList.contains('hidden'),
+      canvasVisible: !document.getElementById('bubble-canvas').classList.contains('hidden'),
     })`);
     check('exercise-figure-visible', figureDom.figureVisible === true ||
-      figureDom.photoVisible === true || figureDom.videoVisible === true,
+      figureDom.photoVisible === true || figureDom.videoVisible === true ||
+      figureDom.canvasVisible === true,
       JSON.stringify(figureDom));
     await js(`document.getElementById('btn-done').click()`);
     await sleep(800);

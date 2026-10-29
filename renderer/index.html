@@ -27,6 +27,10 @@
            below is the fallback for exercises without a photo yet. -->
       <img id="bubble-photo" class="hidden" alt="" />
       <video id="bubble-video" class="hidden" autoplay loop muted playsinline></video>
+      <!-- Canvas chromakey: the video is drawn here frame-by-frame with
+           its background (grey, or green for squats) keyed out, so only
+           the person floats over the desktop — no rectangle. -->
+      <canvas id="bubble-canvas" class="hidden" width="170" height="340"></canvas>
       <div id="bubble-figure" class="hidden" aria-hidden="true">
         <svg viewBox="0 0 100 140" width="90" height="126">
           <g class="fig-person">
