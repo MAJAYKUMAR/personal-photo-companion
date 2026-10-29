@@ -21,9 +21,12 @@
     <!-- Reminder speech bubble, hidden until a reminder fires. -->
     <div id="bubble" class="hidden" role="status">
       <div id="bubble-title"></div>
-      <!-- Live animated exercise figure (3D, original SVG, no photo
-           copied from anywhere). Shown for exercise reminders only;
-           hidden for water reminders. -->
+      <!-- Final version: exercise photo (and squat video) of the same
+           3D cartoon character doing the exercise, shown for exercise
+           reminders only; hidden for water reminders. The SVG figure
+           below is the fallback for exercises without a photo yet. -->
+      <img id="bubble-photo" class="hidden" alt="" />
+      <video id="bubble-video" class="hidden" autoplay loop muted playsinline></video>
       <div id="bubble-figure" class="hidden" aria-hidden="true">
         <svg viewBox="0 0 100 140" width="90" height="126">
           <g class="fig-person">

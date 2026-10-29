@@ -595,11 +595,14 @@ async function runE2eSelfTest() {
       typeof exDom.text === 'string' && exDom.text.length > 10,
       JSON.stringify(exDom));
     const figureDom = await js(`({
-      visible: !document.getElementById('bubble-figure').classList.contains('hidden'),
-      pose: document.getElementById('bubble-figure').className,
+      figureVisible: !document.getElementById('bubble-figure').classList.contains('hidden'),
+      photoVisible: !document.getElementById('bubble-photo').classList.contains('hidden'),
+      photoSrc: document.getElementById('bubble-photo').src,
+      videoVisible: !document.getElementById('bubble-video').classList.contains('hidden'),
     })`);
-    check('exercise-figure-visible', figureDom.visible === true &&
-      /pose-\d/.test(figureDom.pose), JSON.stringify(figureDom));
+    check('exercise-figure-visible', figureDom.figureVisible === true ||
+      figureDom.photoVisible === true || figureDom.videoVisible === true,
+      JSON.stringify(figureDom));
     await js(`document.getElementById('btn-done').click()`);
     await sleep(800);
     // Done flushes the queue, so a timed reminder that queued while the

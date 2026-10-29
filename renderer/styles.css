@@ -63,11 +63,39 @@ body {
 
 #bubble {
   width: 220px;
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 10px 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, #ffffff 0%, #eaf6ff 100%);
+  border-radius: 20px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 28px rgba(20, 60, 100, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   -webkit-app-region: no-drag;
+}
+#bubble-photo, #bubble-video {
+  width: 150px;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 16px;
+  display: block;
+  margin: 4px auto 8px;
+  box-shadow: 0 8px 20px rgba(20, 60, 100, 0.25);
+  background: #eef2f5;
+}
+#bubble-photo.pose-4, #bubble-video.pose-4 {
+  animation: photoSquat 1.4s ease-in-out infinite;
+}
+@keyframes photoSquat {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(16px) scaleY(0.86); }
+}
+#bubble-photo.pose-0 { animation: photoBob 1.2s ease-in-out infinite; }
+@keyframes photoBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+#status {
+  background: linear-gradient(90deg, #ffffff, #e3f2ff);
+  box-shadow: 0 2px 8px rgba(20, 60, 100, 0.18);
+}
+#btn-done {
+  background: linear-gradient(180deg, #c8f7d4, #95d5b2);
+  font-weight: 700;
 }
 
 #bubble-title {

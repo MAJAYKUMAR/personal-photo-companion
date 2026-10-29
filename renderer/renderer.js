@@ -116,16 +116,36 @@
     currentReminderType = reminder.type;
     bubbleTitleEl.textContent = reminder.title;
     bubbleTextEl.textContent = reminder.text;
-    // Exercise reminders show the live 3D animated figure doing that
-    // exercise; water reminders show no figure.
+    // Exercise reminders show the 3D cartoon doing that exercise:
+    // a photo for exercises 0-4, a looping squat video for squats
+    // (index 4), and the animated SVG figure as fallback for 5-9
+    // until their photos are generated. Water shows none of these.
     const figureEl = document.getElementById('bubble-figure');
-    if (figureEl) {
-      figureEl.className = '';
-      if (reminder.type === 'exercise' &&
-          Number.isInteger(reminder.exerciseIndex)) {
-        figureEl.classList.add(`pose-${reminder.exerciseIndex}`);
-      } else {
-        figureEl.classList.add('hidden');
+    const photoEl = document.getElementById('bubble-photo');
+    const videoEl = document.getElementById('bubble-video');
+    const EXERCISE_PHOTOS = [
+      'ex0-arms-overhead.png', 'ex1-shoulder-rolls.png',
+      'ex2-neck-turns.png', 'ex3-walk-around.png',
+      'ex4-chair-squats.png',
+    ];
+    if (photoEl) photoEl.classList.add('hidden');
+    if (videoEl) { videoEl.classList.add('hidden'); videoEl.pause(); videoEl.removeAttribute('src'); }
+    if (figureEl) figureEl.classList.add('hidden');
+    if (reminder.type === 'exercise' &&
+        Number.isInteger(reminder.exerciseIndex)) {
+      const idx = reminder.exerciseIndex;
+      if (idx === 4 && videoEl) {
+        videoEl.src = '../assets/exercises/ex4-chair-squats.mp4';
+        videoEl.classList.remove('hidden');
+        videoEl.classList.add('pose-4');
+        videoEl.play().catch(() => {});
+      } else if (EXERCISE_PHOTOS[idx] && photoEl) {
+        photoEl.src = `../assets/exercises/${EXERCISE_PHOTOS[idx]}`;
+        photoEl.className = '';
+        photoEl.classList.add(`pose-${idx}`);
+      } else if (figureEl) {
+        figureEl.className = '';
+        figureEl.classList.add(`pose-${idx}`);
       }
     }
     bubbleEl.classList.remove('hidden');
@@ -161,6 +181,10 @@
     bubbleEl.classList.add('hidden');
     const figureEl = document.getElementById('bubble-figure');
     if (figureEl) figureEl.classList.add('hidden');
+    const photoEl = document.getElementById('bubble-photo');
+    if (photoEl) photoEl.classList.add('hidden');
+    const videoEl = document.getElementById('bubble-video');
+    if (videoEl) { videoEl.classList.add('hidden'); videoEl.pause(); }
     // Done/Snooze pass keepAnim so their jump/droop can finish;
     // animationend then settles back to idle. All other hides go idle.
     if (!keepAnim) setAvatarAnim('anim-idle');
