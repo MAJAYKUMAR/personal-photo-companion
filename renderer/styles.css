@@ -360,6 +360,18 @@ button:hover {
 #avatar.anim-sad {
   animation: avatarSad 0.6s ease-out forwards;
 }
+/* Exercise snooze sad beat: the bubble + video canvas droop and dim
+   together, so the sad reaction is visible before the screen clears. */
+#bubble.anim-sad {
+  filter: grayscale(0.6) brightness(0.85);
+  transform: translateY(8px) scale(0.98);
+  transition: filter 0.4s ease, transform 0.4s ease;
+}
+#bubble-canvas.anim-sad {
+  filter: grayscale(0.6) brightness(0.85);
+  transform: translateY(8px) scale(0.97);
+  transition: filter 0.4s ease, transform 0.4s ease;
+}
 #avatar.anim-celebrate {
   animation: avatarCelebrate 1.2s ease-out forwards;
 }

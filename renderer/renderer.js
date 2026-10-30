@@ -140,9 +140,11 @@
     if (window.__pccVideoLoop) { cancelAnimationFrame(window.__pccVideoLoop); window.__pccVideoLoop = 0; }
     if (figureEl) figureEl.classList.add('hidden');
     if (reminder.type === 'water' && photoEl) {
-      // Water: the same full-body character, cut out, floating over
-      // the desktop — no box, just the person + text + buttons.
-      photoEl.src = '../assets/character-fullbody-cutout.png';
+      // Water: the character holding a water bottle up in his hand,
+      // cut out, floating over the desktop — no box, just the person
+      // + bottle + text + buttons. (Previously it was the plain
+      // sitting character with no bottle at all.)
+      photoEl.src = '../assets/water-bottle-cutout.png';
       photoEl.className = '';
     }
     if (reminder.type === 'exercise' &&
@@ -153,8 +155,8 @@
       const EXERCISE_VIDEOS = [
         'ex0-arms-overhead.mp4', 'ex1-shoulder-rolls.mp4',
         'ex2-neck-turns.mp4', 'ex3-walk-around.mp4',
-        'ex4-chair-squats-green.mp4', 'ex5-wrist-stretch.mp4',
-        'ex6-calf-raises.mp4', 'ex7-shake-hands.mp4',
+        'ex4-chair-squats-green.mp4', 'ex5-wrist-stretch-v2.mp4',
+        'ex6-calf-raises.mp4', 'ex7-shake-hands-v2.mp4',
         'ex8-spinal-twist.mp4', 'ex9-march-in-place.mp4',
       ];
       const KEY_COLORS = [
@@ -307,20 +309,44 @@
   });
 
   document.getElementById('btn-snooze').addEventListener('click', () => {
-    if (currentReminderType) window.companion.snooze(currentReminderType);
-    // Unique Snooze reaction: sleepy sway in place, dimming and drooping
-    // like it's nodding off, then waking back to centre idle.
-    setAvatarAnim('anim-sleepy');
-    hideBubble(true);
+    // Snooze reaction: for exercise, the character goes SAD first —
+    // droops, dims and greys out for 1.6s so you actually see it —
+    // then the snooze is sent and the screen clears. Water keeps the
+    // sleepy sway. Previously the window hid instantly, so the
+    // reaction was never visible.
+    if (currentReminderType === 'exercise') {
+      // Keep the bubble on screen for the sad beat — hiding it first
+      // would hide the canvas too, so the reaction was invisible.
+      setAvatarAnim('anim-sad');
+      bubbleEl.classList.add('anim-sad');
+      const canvasEl = document.getElementById('bubble-canvas');
+      if (canvasEl) canvasEl.classList.add('anim-sad');
+      setTimeout(() => {
+        bubbleEl.classList.remove('anim-sad');
+        if (canvasEl) canvasEl.classList.remove('anim-sad');
+        hideBubble(true);
+        window.companion.snooze('exercise');
+      }, 1600);
+    } else {
+      if (currentReminderType) window.companion.snooze(currentReminderType);
+      setAvatarAnim('anim-sleepy');
+      hideBubble(true);
+    }
   });
 
   document.getElementById('btn-settings').addEventListener('click', () => {
     settingsEl.classList.toggle('hidden');
     // Grow the window when settings open so Save + photo option are
     // visible; shrink it back when settings close.
-    window.companion.resizeWindow(
-      settingsEl.classList.contains('hidden') ? 330 : 850,
-    );
+    // Reminder-only rule: closing settings with no bubble showing
+    // hides the whole window (tray only) — no "Here with you" pill
+    // or toolbar left on the desktop by default.
+    if (settingsEl.classList.contains('hidden')) {
+      window.companion.resizeWindow(330);
+      if (bubbleEl.classList.contains('hidden')) window.companion.hideWindow();
+    } else {
+      window.companion.resizeWindow(850);
+    }
   });
 
   document.getElementById('btn-hide').addEventListener('click', () => {
@@ -368,6 +394,10 @@
       fillSettingsForm(data);
       settingsEl.classList.add('hidden');
       window.companion.resizeWindow(330);
+      // Reminder-only rule (user report 2026-10-29): after Save, with
+      // no reminder showing, the window must hide completely — no
+      // status pill or toolbar left on the default screen.
+      if (bubbleEl.classList.contains('hidden')) window.companion.hideWindow();
     });
   });
 })();
