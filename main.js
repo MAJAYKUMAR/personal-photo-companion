@@ -756,6 +756,8 @@ async function runE2eSelfTest() {
     check('edge-water-preview-status', wDom.status === 'Water break', wDom.status);
     check('edge-water-bottle-photo', wDom.photoVisible === true && /water-bottle-cutout/.test(wDom.photoSrc || ''), wDom.photoSrc);
     check('edge-avatar-hidden-during-bubble', wDom.avatarHidden === true, JSON.stringify(wDom.avatarHidden));
+    const toolbarHiddenDom = await js(`document.getElementById('toolbar').classList.contains('hidden') || document.getElementById('toolbar').style.display === 'none'`);
+    check('edge-toolbar-hidden-during-bubble', toolbarHiddenDom === true, JSON.stringify(toolbarHiddenDom));
     check('edge-buttons-visible-in-window', wDom.doneRect.bottom <= 520 && wDom.snoozeRect.bottom <= 520 && wDom.doneRect.top >= 0, JSON.stringify(wDom));
     check('edge-buttons-above-photo', wDom.doneRect.bottom <= wDom.photoRect.top && wDom.snoozeRect.bottom <= wDom.photoRect.top, JSON.stringify(wDom));
     const wBounds = mainWindow.getBounds();
@@ -809,6 +811,10 @@ async function runE2eSelfTest() {
     await js(`document.getElementById('btn-hide').click()`);
     await sleep(500);
     check('edge-hide-button-hides-window', mainWindow.isVisible() === false);
+    // Note: Hide (X) is itself a toolbar button, so this check runs
+    // while the bubble is up via JS click; after hide, toolbar
+    // returns for the tray-click view (verified on next preview's
+    // hide path in the snooze section).
     await js(`window.companion.previewReminder('water')`);
     await sleep(1000);
     const backDom = await js(`document.getElementById('bubble').classList.contains('hidden')`);

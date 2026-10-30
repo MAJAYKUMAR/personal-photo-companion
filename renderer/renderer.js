@@ -210,6 +210,13 @@
       }
     }
     bubbleEl.classList.remove('hidden');
+    // User decision 2026-10-29: during a water/exercise reminder,
+    // ONLY Done / Snooze show — hide the 4 toolbar buttons
+    // (Settings, Quiet, DND, Hide) so they don't clutter the bubble
+    // or push content toward the taskbar. Toolbar returns when the
+    // bubble hides (tray-click view) — see hideBubble below.
+    const toolbarEl = document.getElementById('toolbar');
+    if (toolbarEl) { toolbarEl.classList.add('hidden'); toolbarEl.style.display = 'none'; }
     // Arrive, then settle to a gentle idle — NO left-right shaking
     // while the bubble shows (that shaking on a passport photo is
     // exactly what the user reported as not good).
@@ -241,6 +248,9 @@
 
   function hideBubble(keepAnim) {
     bubbleEl.classList.add('hidden');
+    // Restore the toolbar for the tray-click / no-reminder view.
+    const toolbarEl = document.getElementById('toolbar');
+    if (toolbarEl) { toolbarEl.classList.remove('hidden'); toolbarEl.style.display = ''; }
     const figureEl = document.getElementById('bubble-figure');
     if (figureEl) figureEl.classList.add('hidden');
     const photoEl = document.getElementById('bubble-photo');
