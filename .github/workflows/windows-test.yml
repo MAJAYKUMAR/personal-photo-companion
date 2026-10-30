@@ -141,7 +141,7 @@ jobs:
         with:
           name: windows-build
           path: |
-            dist/
+            dist/*Setup*.exe
             windows-launch-shot.png
             installed-launch-shot.png
           if-no-files-found: warn
