@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('companion', {
   getCustomAvatar: () => ipcRenderer.invoke('get-custom-avatar'),
   snooze: (type) => ipcRenderer.send('snooze', type),
   bubbleDismissed: () => ipcRenderer.send('bubble-dismissed'),
+  runAway: () => ipcRenderer.send('run-away'),
+  onWalkStart: (callback) => ipcRenderer.on('walk-start', () => callback()),
   hideWindow: () => ipcRenderer.send('hide-window'),
   quitApp: () => ipcRenderer.send('quit-app'),
   previewReminder: (type) => ipcRenderer.send('preview-reminder', type),

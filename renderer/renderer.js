@@ -99,9 +99,11 @@
     avatarEl.classList.add(name);
   }
   avatarEl.addEventListener('animationend', (event) => {
+    // Sad is NOT reset to idle: after a snooze the character must
+    // stay sad (drooped) until the next reminder, otherwise the
+    // 1.6s sad beat is already gone when the screen clears.
     if (event.animationName === 'avatarWalkIn' ||
-        event.animationName === 'avatarSuccess' ||
-        event.animationName === 'avatarSad') {
+        event.animationName === 'avatarSuccess') {
       setAvatarAnim('anim-idle');
     }
     // Unique exits settle back to centre idle when they finish.
@@ -199,7 +201,8 @@
     // exactly what the user reported as not good).
     setAvatarAnim('anim-walk-in');
     setTimeout(() => {
-      if (!bubbleEl.classList.contains('hidden')) setAvatarAnim('anim-idle');
+      if (!bubbleEl.classList.contains('hidden') &&
+          !avatarEl.classList.contains('anim-sad')) setAvatarAnim('anim-idle');
     }, 1300);
     statusEl.textContent =
       reminder.type === 'water' ? 'Water break' : 'Movement break';
@@ -299,39 +302,66 @@
     });
   });
 
+  // Walk-start: window is walking in from the left edge — show the
+  // avatar walking, bubble hidden, until the main process sends the
+  // reminder (which shows the bubble on the left side).
+  if (window.companion.onWalkStart) {
+    window.companion.onWalkStart(() => {
+      if (avatarEl) avatarEl.classList.remove('hidden');
+      bubbleEl.classList.add('hidden');
+      setAvatarAnim('anim-walk-in');
+    });
+  }
+
   document.getElementById('btn-done').addEventListener('click', () => {
-    // Unique Done reaction: celebration spin-jump in place, not a
-    // walk to a side. Bubble hides immediately but the spin finishes
-    // first (keepAnim), then animationend settles back to idle.
-    setAvatarAnim('anim-celebrate');
-    hideBubble(true);
-    window.companion.bubbleDismissed();
+    // Done / YES: the character RUNS AWAY to the right, across the
+    // screen — not a spin-jump in place. Text and buttons hide, the
+    // person keeps running while the window moves right, then the
+    // bubble is dismissed and the screen clears.
+    const type = currentReminderType;
+    bubbleTitleEl.classList.add('hidden');
+    bubbleTextEl.classList.add('hidden');
+    const actionsEl = document.getElementById('bubble-actions');
+    if (actionsEl) actionsEl.classList.add('hidden');
+    bubbleEl.classList.add('anim-run');
+    const canvasEl = document.getElementById('bubble-canvas');
+    if (canvasEl) canvasEl.classList.add('anim-run');
+    const photoEl = document.getElementById('bubble-photo');
+    if (photoEl) photoEl.classList.add('anim-run');
+    if (window.companion.runAway) window.companion.runAway();
+    setTimeout(() => {
+      bubbleTitleEl.classList.remove('hidden');
+      bubbleTextEl.classList.remove('hidden');
+      if (actionsEl) actionsEl.classList.remove('hidden');
+      bubbleEl.classList.remove('anim-run');
+      if (canvasEl) canvasEl.classList.remove('anim-run');
+      if (photoEl) photoEl.classList.remove('anim-run');
+      setAvatarAnim('anim-idle');
+      hideBubble(true);
+      window.companion.bubbleDismissed();
+    }, 1100);
   });
 
   document.getElementById('btn-snooze').addEventListener('click', () => {
-    // Snooze reaction: for exercise, the character goes SAD first —
-    // droops, dims and greys out for 1.6s so you actually see it —
-    // then the snooze is sent and the screen clears. Water keeps the
-    // sleepy sway. Previously the window hid instantly, so the
-    // reaction was never visible.
-    if (currentReminderType === 'exercise') {
-      // Keep the bubble on screen for the sad beat — hiding it first
-      // would hide the canvas too, so the reaction was invisible.
-      setAvatarAnim('anim-sad');
-      bubbleEl.classList.add('anim-sad');
-      const canvasEl = document.getElementById('bubble-canvas');
-      if (canvasEl) canvasEl.classList.add('anim-sad');
-      setTimeout(() => {
-        bubbleEl.classList.remove('anim-sad');
-        if (canvasEl) canvasEl.classList.remove('anim-sad');
-        hideBubble(true);
-        window.companion.snooze('exercise');
-      }, 1600);
-    } else {
-      if (currentReminderType) window.companion.snooze(currentReminderType);
-      setAvatarAnim('anim-sleepy');
+    // Snooze / Later, for BOTH water and exercise: the character
+    // goes SAD first — droops, dims and greys out for 1.6s so you
+    // actually see it — then the snooze is sent and the screen
+    // clears. Previously water hid instantly, so no sad was visible.
+    const type = currentReminderType;
+    if (!type) return;
+    setAvatarAnim('anim-sad');
+    bubbleEl.classList.add('anim-sad');
+    const canvasEl = document.getElementById('bubble-canvas');
+    if (canvasEl) canvasEl.classList.add('anim-sad');
+    const photoEl = document.getElementById('bubble-photo');
+    if (photoEl) photoEl.classList.add('anim-sad');
+    setTimeout(() => {
+      bubbleEl.classList.remove('anim-sad');
+      if (canvasEl) canvasEl.classList.remove('anim-sad');
+      if (photoEl) photoEl.classList.remove('anim-sad');
       hideBubble(true);
-    }
+      window.companion.snooze(type);
+    }, 1600);
   });
 
   document.getElementById('btn-settings').addEventListener('click', () => {

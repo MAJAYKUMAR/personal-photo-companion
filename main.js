@@ -262,6 +262,51 @@ function resizeWindowForReminder() {
   }
 }
 
+// Walk-in from the left (user spec, 2026-10-29): a real reminder
+// starts off-screen at the LEFT edge, takes a few steps in, stops on
+// the left side, and only then asks (bubble). Done runs it away to
+// the right; Snooze makes it sad. E2E runs skip the walk so the
+// self-test timing stays deterministic.
+function walkInFromLeft(payload) {
+  try {
+    const { screen } = require('electron');
+    const area = screen.getPrimaryDisplay().workAreaSize;
+    const b = mainWindow.getBounds();
+    const y = area.height - 520;
+    mainWindow.setBounds({ x: -240, y, width: 240, height: 520 });
+    mainWindow.showInactive();
+    mainWindow.webContents.send('walk-start');
+    let x = -240;
+    const timer = setInterval(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) { clearInterval(timer); return; }
+      x += 35;
+      mainWindow.setBounds({ x, y, width: 240, height: 520 });
+      if (x >= 20) {
+        clearInterval(timer);
+        e2eLog('walk-in-done', x);
+        mainWindow.webContents.send('reminder', payload);
+      }
+    }, 90);
+  } catch (err) {
+    mainWindow.webContents.send('reminder', payload);
+  }
+}
+
+function runAwayToRight() {
+  try {
+    const { screen } = require('electron');
+    const area = screen.getPrimaryDisplay().workAreaSize;
+    const b = mainWindow.getBounds();
+    let x = b.x;
+    const timer = setInterval(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) { clearInterval(timer); return; }
+      x += 80;
+      mainWindow.setBounds({ x, y: b.y, width: b.width, height: b.height });
+      if (x > area.width) clearInterval(timer);
+    }, 50);
+  } catch { /* window hides via bubble-dismissed anyway */ }
+}
+
 function displayReminder(payload, meta) {
   e2eLog(
     'reminder-fired',
@@ -271,9 +316,13 @@ function displayReminder(payload, meta) {
     meta && meta.preview ? '(preview)' : '',
   );
   if (mainWindow && !mainWindow.isDestroyed()) {
-    resizeWindowForReminder();
-    mainWindow.showInactive();
-    mainWindow.webContents.send('reminder', payload);
+    if (!E2E && !(meta && meta.preview)) {
+      walkInFromLeft(payload);
+    } else {
+      resizeWindowForReminder();
+      mainWindow.showInactive();
+      mainWindow.webContents.send('reminder', payload);
+    }
     if (E2E && !screenshotTaken) {
       screenshotTaken = true;
       const out = process.env.PCC_E2E_SCREENSHOT || '/tmp/pcc-e2e/shot.png';
@@ -564,7 +613,14 @@ async function runE2eSelfTest() {
     check('water-bubble-content', waterDom.title === 'Water break' &&
       waterDom.text === 'Time for a sip of water.', JSON.stringify(waterDom));
     await js(`document.getElementById('btn-snooze').click()`);
-    await sleep(1200);
+    // Sad beat is 1.6s: check it MID-beat (500ms), not after the
+    // screen clears, when the avatar legitimately settles to idle.
+    await sleep(500);
+    const sadDom = await js(`({
+      avatarClass: document.getElementById('avatar').className,
+      bubbleClass: document.getElementById('bubble').className,
+    })`);
+    await sleep(1600);
     // Snooze is recorded even if a queued exercise reminder immediately
     // replaces the water bubble (correct queue behaviour: the next
     // reminder shows, it does not mean snooze failed). Clear any queued
@@ -579,9 +635,12 @@ async function runE2eSelfTest() {
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
     // Snooze must clear the screen: no queued reminder may pop back
-    // immediately (the 2026-10-29 real-Windows bug).
-    check('snooze-sleepy-animation', /anim-sleepy/.test(snoozeDom.avatarClass),
-      snoozeDom.avatarClass);
+    // immediately (the 2026-10-29 real-Windows bug). Snooze is now a
+    // SAD beat for both water and exercise — checked mid-beat above.
+    check('snooze-sleepy-animation',
+      /anim-sad|anim-sleepy/.test(sadDom.avatarClass) ||
+      /anim-sad/.test(sadDom.bubbleClass),
+      JSON.stringify(sadDom));
     check('snooze-hides-bubble', snoozeDom.bubbleHidden === true,
       JSON.stringify(snoozeDom));
     // Exercise preview: title, one of the rotating stretches, Done.
@@ -606,14 +665,15 @@ async function runE2eSelfTest() {
       figureDom.canvasVisible === true,
       JSON.stringify(figureDom));
     await js(`document.getElementById('btn-done').click()`);
-    await sleep(800);
+    await sleep(1600);
     // Done flushes the queue, so a timed reminder that queued while the
     // preview was up may legitimately pop next — finish that one too,
-    // then the screen must be clear.
+    // then the screen must be clear. Done now runs away (1.1s) before
+    // dismissing, so wait past that.
     const afterDone = await js(`document.getElementById('bubble').classList.contains('hidden')`);
     if (afterDone !== true) {
       await js(`document.getElementById('btn-done').click()`);
-      await sleep(800);
+      await sleep(1600);
     }
     const doneDom = await js(`({
       avatarClass: document.getElementById('avatar').className,
@@ -897,6 +957,11 @@ ipcMain.on('snooze', (_event, type) => {
   // user presses Done on a later reminder.
   bubble.snooze();
   hideWindowIfNoBubble();
+});
+
+ipcMain.on('run-away', () => {
+  e2eLog('run-away');
+  runAwayToRight();
 });
 
 ipcMain.on('bubble-dismissed', () => {

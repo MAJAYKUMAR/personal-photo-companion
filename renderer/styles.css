@@ -372,6 +372,20 @@ button:hover {
   transform: translateY(8px) scale(0.97);
   transition: filter 0.4s ease, transform 0.4s ease;
 }
+#bubble-photo.anim-sad {
+  filter: grayscale(0.6) brightness(0.85);
+  transform: translateY(8px) scale(0.97);
+  transition: filter 0.4s ease, transform 0.4s ease;
+}
+@keyframes bubbleRun {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(6px) translateY(-4px); }
+  50% { transform: translateX(0) translateY(0); }
+  75% { transform: translateX(6px) translateY(-4px); }
+}
+#bubble.anim-run, #bubble-canvas.anim-run, #bubble-photo.anim-run {
+  animation: bubbleRun 0.25s linear infinite;
+}
 #avatar.anim-celebrate {
   animation: avatarCelebrate 1.2s ease-out forwards;
 }
