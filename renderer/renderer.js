@@ -153,11 +153,15 @@
       const EXERCISE_VIDEOS = [
         'ex0-arms-overhead.mp4', 'ex1-shoulder-rolls.mp4',
         'ex2-neck-turns.mp4', 'ex3-walk-around.mp4',
-        'ex4-chair-squats-green.mp4',
+        'ex4-chair-squats-green.mp4', 'ex5-wrist-stretch.mp4',
+        'ex6-calf-raises.mp4', 'ex7-shake-hands.mp4',
+        'ex8-spinal-twist.mp4', 'ex9-march-in-place.mp4',
       ];
       const KEY_COLORS = [
         [214, 211, 210], [214, 211, 210], [214, 211, 210],
         [214, 211, 210], [41, 171, 34],
+        [214, 211, 210], [214, 211, 210], [214, 211, 210],
+        [214, 211, 210], [214, 211, 210],
       ];
       if (EXERCISE_VIDEOS[idx] && videoEl && canvasEl) {
         const ctx = canvasEl.getContext('2d');
