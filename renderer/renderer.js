@@ -159,16 +159,20 @@
       const idx = reminder.exerciseIndex;
       // REA pattern, original clips only: pre-rendered video clips,
       // played through a canvas chromakey so only the person shows.
+      // Focus versions: all vertical portrait 720x1280, character large
+      // and filling the frame, per EXERCISE_VIDEO_RULES.md. Squats now
+      // use a grey-background clip, so its key colour is grey too —
+      // the old green-screen clip is superseded.
       const EXERCISE_VIDEOS = [
-        'ex0-arms-overhead.mp4', 'ex1-shoulder-rolls.mp4',
-        'ex2-neck-turns.mp4', 'ex3-walk-around-v2.mp4',
-        'ex4-chair-squats-green.mp4', 'ex5-wrist-stretch-v3.mp4',
-        'ex6-calf-raises-v3.mp4', 'ex7-shake-hands-v3.mp4',
-        'ex8-spinal-twist-v3.mp4', 'ex9-march-in-place.mp4',
+        'ex0-arms-overhead-v2.mp4', 'ex1-shoulder-rolls-v2.mp4',
+        'ex2-neck-turns-v2.mp4', 'ex3-walk-around-v3.mp4',
+        'ex4-chair-squats-v2.mp4', 'ex5-wrist-stretch-v4.mp4',
+        'ex6-calf-raises-v4.mp4', 'ex7-shake-hands-v4.mp4',
+        'ex8-spinal-twist-v4.mp4', 'ex9-march-in-place-v2.mp4',
       ];
       const KEY_COLORS = [
         [214, 211, 210], [214, 211, 210], [214, 211, 210],
-        [214, 211, 210], [41, 171, 34],
+        [214, 211, 210], [214, 211, 210],
         [214, 211, 210], [214, 211, 210], [214, 211, 210],
         [214, 211, 210], [214, 211, 210],
       ];
