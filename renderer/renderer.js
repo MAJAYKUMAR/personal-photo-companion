@@ -181,7 +181,12 @@
           const d = frame.data; const kc = KEY_COLORS[idx];
           for (let i = 0; i < d.length; i += 4) {
             const dr = d[i] - kc[0], dg = d[i + 1] - kc[1], db = d[i + 2] - kc[2];
-            if (Math.sqrt(dr * dr + dg * dg + db * db) < 42) d[i + 3] = 0;
+            // Squats (index 4) use a green screen whose shade varies across
+            // the frame (corners measured 44-62 away from the key colour),
+            // so distance-only keying left green patches visible. For green,
+            // key any pixel where green clearly dominates red and blue.
+            const isGreenScreen = idx === 4 && d[i + 1] > d[i] + 30 && d[i + 1] > d[i + 2] + 30;
+            if (isGreenScreen || Math.sqrt(dr * dr + dg * dg + db * db) < 42) d[i + 3] = 0;
           }
           ctx.putImageData(frame, 0, 0);
           window.__pccVideoLoop = requestAnimationFrame(draw);
