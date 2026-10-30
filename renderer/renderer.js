@@ -135,8 +135,11 @@
     ];
     // Overlay mode: the bubble photo IS the person — hide the main
     // avatar so there is only one person on screen, never two.
+    // Belt-and-braces: class + inline display, so a custom photo
+    // (user's own upload) can never show through over the water
+    // bottle character or an exercise clip.
     const avatarEl = document.getElementById('avatar');
-    if (avatarEl) avatarEl.classList.add('hidden');
+    if (avatarEl) { avatarEl.classList.add('hidden'); avatarEl.style.display = 'none'; }
     if (photoEl) photoEl.classList.add('hidden');
     if (videoEl) { videoEl.classList.add('hidden'); videoEl.pause(); videoEl.removeAttribute('src'); }
     const canvasEl = document.getElementById('bubble-canvas');
@@ -314,7 +317,7 @@
   // reminder (which shows the bubble on the left side).
   if (window.companion.onWalkStart) {
     window.companion.onWalkStart(() => {
-      if (avatarEl) avatarEl.classList.remove('hidden');
+      if (avatarEl) { avatarEl.classList.remove('hidden'); avatarEl.style.display = ''; }
       bubbleEl.classList.add('hidden');
       setAvatarAnim('anim-walk-in');
     });
