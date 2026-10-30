@@ -20,6 +20,8 @@
   let lastAvatarKey = null;
 
   const AVATAR_CANDIDATES = [
+    '../assets/ajay-cartoon-fullbody-cutout.png',
+    '../assets/ajay-cartoon-fullbody.png',
     '../assets/character-fullbody-cutout.png',
     '../assets/character-fullbody.png',
     '../assets/avatar.png',
