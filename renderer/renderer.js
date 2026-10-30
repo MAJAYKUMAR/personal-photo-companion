@@ -391,8 +391,17 @@
     // hides the whole window (tray only) — no "Here with you" pill
     // or toolbar left on the desktop by default.
     if (settingsEl.classList.contains('hidden')) {
-      window.companion.resizeWindow(330);
-      if (bubbleEl.classList.contains('hidden')) window.companion.hideWindow();
+      // BUG (user video 2026-10-29): closing settings DURING a reminder
+      // shrank the window to 330px, so the bubble (photo + text +
+      // buttons, ~520px) overflowed below the window / taskbar and
+      // Done / Snooze could not be seen or clicked. If a bubble is
+      // showing, restore the reminder height (520), not compact (330).
+      if (bubbleEl.classList.contains('hidden')) {
+        window.companion.resizeWindow(330);
+        window.companion.hideWindow();
+      } else {
+        window.companion.resizeWindow(520);
+      }
     } else {
       window.companion.resizeWindow(850);
     }
@@ -442,11 +451,14 @@
       settings = data;
       fillSettingsForm(data);
       settingsEl.classList.add('hidden');
-      window.companion.resizeWindow(330);
-      // Reminder-only rule (user report 2026-10-29): after Save, with
-      // no reminder showing, the window must hide completely — no
-      // status pill or toolbar left on the default screen.
-      if (bubbleEl.classList.contains('hidden')) window.companion.hideWindow();
+      // Same bug as settings-close: Save during a reminder must
+      // restore 520px, not shrink to 330px and cut the buttons off.
+      if (bubbleEl.classList.contains('hidden')) {
+        window.companion.resizeWindow(330);
+        window.companion.hideWindow();
+      } else {
+        window.companion.resizeWindow(520);
+      }
     });
   });
 })();
