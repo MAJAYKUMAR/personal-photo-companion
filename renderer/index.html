@@ -18,8 +18,16 @@
       <div id="status">Here with you</div>
     </div>
 
-    <!-- Reminder speech bubble, hidden until a reminder fires. -->
+    <!-- Reminder speech bubble, hidden until a reminder fires.
+         Buttons FIRST, above the photo — like the reference video's
+         YES / Remind me later pills above the character — so Done /
+         Snooze are never pushed below the window bottom / taskbar,
+         even if the window sits low on screen. -->
     <div id="bubble" class="hidden" role="status">
+      <div id="bubble-actions">
+        <button id="btn-done" type="button">Done ✓</button>
+        <button id="btn-snooze" type="button">Snooze 10 min</button>
+      </div>
       <div id="bubble-title"></div>
       <!-- Final version: exercise photo (and squat video) of the same
            3D cartoon character doing the exercise, shown for exercise
@@ -44,10 +52,6 @@
         </svg>
       </div>
       <div id="bubble-text"></div>
-      <div id="bubble-actions">
-        <button id="btn-done" type="button">Done ✓</button>
-        <button id="btn-snooze" type="button">Snooze 10 min</button>
-      </div>
     </div>
 
     <div id="toolbar">

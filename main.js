@@ -256,8 +256,11 @@ function resizeWindowForReminder() {
   const target = 520;
   const b = mainWindow.getBounds();
   if (b.height !== target) {
+    const area = screen.getPrimaryDisplay().workArea;
+    const bottom = area.y + area.height - 16;
+    const y = Math.min(b.y + b.height - target, bottom - target);
     mainWindow.setBounds({
-      x: b.x, y: b.y + b.height - target, width: WIN_WIDTH, height: target,
+      x: b.x, y, width: WIN_WIDTH, height: target,
     });
   }
 }
@@ -270,9 +273,12 @@ function resizeWindowForReminder() {
 function walkInFromLeft(payload) {
   try {
     const { screen } = require('electron');
-    const area = screen.getPrimaryDisplay().workAreaSize;
+    // Use the full workArea (x/y/height), not just its size, and leave
+    // a 16px margin above the taskbar — otherwise the window bottom
+    // (and its buttons) can sit behind / below the taskbar.
+    const area = screen.getPrimaryDisplay().workArea;
     const b = mainWindow.getBounds();
-    const y = area.height - 520;
+    const y = area.y + area.height - 520 - 16;
     mainWindow.setBounds({ x: -240, y, width: 240, height: 520 });
     mainWindow.showInactive();
     mainWindow.webContents.send('walk-start');
@@ -556,7 +562,7 @@ async function runE2eSelfTest() {
       toolbar: Array.from(document.querySelectorAll('#toolbar button')).map(b => b.id).join(','),
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
-    check('avatar-loads', /(character-fullbody(-cutout)?|avatar)\.(png|svg)/.test(launchDom.avatarSrc || ''),
+    check('avatar-loads', /(character-fullbody(-cutout)?|ajay-cartoon-fullbody(-cutout)?|avatar)\.(png|svg)/.test(launchDom.avatarSrc || ''),
       launchDom.avatarSrc);
     check('status-here-with-you', launchDom.status === 'Here with you',
       launchDom.status);
