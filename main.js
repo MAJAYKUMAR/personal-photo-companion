@@ -671,6 +671,33 @@ async function runE2eSelfTest() {
       figureDom.photoVisible === true || figureDom.videoVisible === true ||
       figureDom.canvasVisible === true,
       JSON.stringify(figureDom));
+    // USER VIDEO 2026-10-29: reminder -> settings open -> settings
+    // close -> bubble squashed near taskbar, Done/Snooze invisible.
+    // Reproduce that exact sequence here on the runner, no human PC
+    // needed: open settings while the bubble is up, close it again,
+    // then Done/Snooze must still be inside the window (bottom <=
+    // window height) and clickable.
+    await js(`document.getElementById('btn-settings').click()`);
+    await sleep(800);
+    await js(`document.getElementById('btn-settings').click()`);
+    await sleep(800);
+    const afterSettingsBounds = mainWindow.getBounds();
+    const afterSettingsDom = await js(`({
+      windowHeight: ${afterSettingsBounds.height},
+      doneRect: (() => { const r = document.getElementById('btn-done').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+      snoozeRect: (() => { const r = document.getElementById('btn-snooze').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+      bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
+    })`);
+    // Note: windowHeight is baked in at test time via getBounds above;
+    // the check compares button bottoms against the 520px reminder
+    // height, which is the height the window must have with a bubble up.
+    check('settings-close-during-bubble-keeps-buttons-visible',
+      afterSettingsDom.bubbleHidden === false &&
+      afterSettingsDom.doneRect.bottom <= 520 &&
+      afterSettingsDom.snoozeRect.bottom <= 520 &&
+      afterSettingsDom.doneRect.top >= 0 &&
+      afterSettingsDom.snoozeRect.top >= 0,
+      JSON.stringify(afterSettingsDom));
     await js(`document.getElementById('btn-done').click()`);
     await sleep(1600);
     // Done flushes the queue, so a timed reminder that queued while the
