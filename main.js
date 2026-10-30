@@ -607,8 +607,12 @@ async function runE2eSelfTest() {
     check('window-shrinks-to-330-after-save', boundsAfterSave.height === 330,
       JSON.stringify(boundsAfterSave));
     // 4. Water reminder: wait for the timed fire, check bubble, Snooze.
+    // Note: with the saved 33-min interval a timed fire cannot arrive
+    // in seconds, so this check is a known FAIL on runners (see
+    // water-preview edge checks below, which do pass). Wait only 5s,
+    // not 30s, so the 45-case batch still fits the runner's 60s exit.
     const started = Date.now();
-    while (!bubble.visible && Date.now() - started < 30000) {
+    while (!bubble.visible && Date.now() - started < 5000) {
       await sleep(250);
     }
     check('water-reminder-fires', bubble.visible === true);
@@ -731,6 +735,93 @@ async function runE2eSelfTest() {
     await sleep(500);
     const backStatus = await js(`document.getElementById('status').textContent`);
     check('status-back-to-here-with-you', backStatus === 'Here with you', backStatus);
+    // 6. Edge-case batch (user request 2026-10-29: 25-50 cases on the
+    // Windows runner, no human PC in the loop). All use previews,
+    // which bypass working-hours/suppression timers, so they are
+    // deterministic on a runner. Total checks after this section: 45.
+    await js(`window.companion.previewReminder('water')`);
+    await sleep(800);
+    const wDom = await js(`({
+      title: document.getElementById('bubble-title').textContent,
+      text: document.getElementById('bubble-text').textContent,
+      status: document.getElementById('status').textContent,
+      photoSrc: document.getElementById('bubble-photo').src,
+      photoVisible: !document.getElementById('bubble-photo').classList.contains('hidden'),
+      avatarHidden: document.getElementById('avatar').classList.contains('hidden') || document.getElementById('avatar').style.display === 'none',
+      doneRect: (() => { const r = document.getElementById('btn-done').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+      snoozeRect: (() => { const r = document.getElementById('btn-snooze').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+      photoRect: (() => { const r = document.getElementById('bubble-photo').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+    })`);
+    check('edge-water-preview-content', wDom.title === 'Water break' && wDom.text === 'Time for a sip of water.', JSON.stringify(wDom));
+    check('edge-water-preview-status', wDom.status === 'Water break', wDom.status);
+    check('edge-water-bottle-photo', wDom.photoVisible === true && /water-bottle-cutout/.test(wDom.photoSrc || ''), wDom.photoSrc);
+    check('edge-avatar-hidden-during-bubble', wDom.avatarHidden === true, JSON.stringify(wDom.avatarHidden));
+    check('edge-buttons-visible-in-window', wDom.doneRect.bottom <= 520 && wDom.snoozeRect.bottom <= 520 && wDom.doneRect.top >= 0, JSON.stringify(wDom));
+    check('edge-buttons-above-photo', wDom.doneRect.bottom <= wDom.photoRect.top && wDom.snoozeRect.bottom <= wDom.photoRect.top, JSON.stringify(wDom));
+    const wBounds = mainWindow.getBounds();
+    check('edge-window-240x520-on-reminder', wBounds.width === 240 && wBounds.height === 520, JSON.stringify(wBounds));
+    try {
+      const wa = screen.getPrimaryDisplay().workArea;
+      check('edge-window-above-taskbar', wBounds.y + wBounds.height <= wa.y + wa.height, JSON.stringify({ bounds: wBounds, workArea: wa }));
+    } catch { check('edge-window-above-taskbar', false, 'workArea unavailable'); }
+    check('edge-tray-exists', !!tray, String(!!tray));
+    // Rotation: two exercise previews must give different texts.
+    await js(`window.companion.previewReminder('exercise')`);
+    await sleep(800);
+    const ex1Text = await js(`document.getElementById('bubble-text').textContent`);
+    await js(`window.companion.previewReminder('exercise')`);
+    await sleep(800);
+    const ex2Text = await js(`document.getElementById('bubble-text').textContent`);
+    check('edge-exercise-rotates', ex1Text !== ex2Text && ex1Text.length > 10 && ex2Text.length > 10, JSON.stringify({ ex1Text, ex2Text }));
+    // Double preview: same bubble, not a duplicate / stacked bubble.
+    await js(`window.companion.previewReminder('water')`);
+    await sleep(500);
+    await js(`window.companion.previewReminder('water')`);
+    await sleep(800);
+    const dblDom = await js(`({
+      title: document.getElementById('bubble-title').textContent,
+      hidden: document.getElementById('bubble').classList.contains('hidden'),
+      count: document.querySelectorAll('#bubble').length,
+    })`);
+    check('edge-double-preview-single-bubble', dblDom.title === 'Water break' && dblDom.hidden === false && dblDom.count === 1, JSON.stringify(dblDom));
+    // Settings open during bubble -> 850, close -> 520 (not 330).
+    await js(`document.getElementById('btn-settings').click()`);
+    await sleep(800);
+    check('edge-settings-open-during-bubble-850', mainWindow.getBounds().height === 850, JSON.stringify(mainWindow.getBounds()));
+    const photoVal = await js(`document.getElementById('in-avatar').value`);
+    check('edge-photo-dropdown-placeholder', photoVal === 'placeholder', photoVal);
+    await js(`document.getElementById('btn-settings').click()`);
+    await sleep(800);
+    check('edge-settings-close-during-bubble-520', mainWindow.getBounds().height === 520, JSON.stringify(mainWindow.getBounds()));
+    // Save during bubble -> also 520, bubble stays up.
+    // Re-preview first: the 4s e2e auto-hide may have cleared the
+    // bubble during the settings steps above, which is correct
+    // behaviour, not a save bug.
+    await js(`window.companion.previewReminder('water')`);
+    await sleep(800);
+    await js(`document.getElementById('btn-settings').click()`);
+    await sleep(800);
+    await js(`document.getElementById('btn-save').click()`);
+    await sleep(800);
+    const saveDom = await js(`({ height: 0, bubbleHidden: document.getElementById('bubble').classList.contains('hidden') })`);
+    check('edge-save-during-bubble-520', mainWindow.getBounds().height === 520 && saveDom.bubbleHidden === false, JSON.stringify({ bounds: mainWindow.getBounds(), bubbleHidden: saveDom.bubbleHidden }));
+    // Hide (X) then preview again: window must come back, bubble up.
+    await js(`document.getElementById('btn-hide').click()`);
+    await sleep(500);
+    check('edge-hide-button-hides-window', mainWindow.isVisible() === false);
+    await js(`window.companion.previewReminder('water')`);
+    await sleep(1000);
+    const backDom = await js(`document.getElementById('bubble').classList.contains('hidden')`);
+    check('edge-preview-after-hide-returns', mainWindow.isVisible() === true && backDom === false, JSON.stringify({ visible: mainWindow.isVisible(), bubbleHidden: backDom }));
+    // Snooze on a preview: 10-min snooze recorded, bubble clears.
+    const snoozeBefore = Date.now();
+    await js(`document.getElementById('btn-snooze').click()`);
+    await sleep(3200);
+    const edgeSnooze = await js(`window.companion.getSettings()`);
+    const snoozeDelta = edgeSnooze && edgeSnooze.snoozedUntilMs ? edgeSnooze.snoozedUntilMs - snoozeBefore : -1;
+    check('edge-snooze-records-10min', edgeSnooze && edgeSnooze.snoozedType === 'water' && snoozeDelta >= 9 * 60 * 1000 && snoozeDelta <= 11 * 60 * 1000, JSON.stringify({ snoozedType: edgeSnooze && edgeSnooze.snoozedType, deltaMs: snoozeDelta }));
+    const snoozeHideDom = await js(`document.getElementById('bubble').classList.contains('hidden')`);
+    check('edge-snooze-clears-bubble', snoozeHideDom === true, JSON.stringify(snoozeHideDom));
   } catch (err) {
     e2eLog('selftest-error', err.message);
   }
