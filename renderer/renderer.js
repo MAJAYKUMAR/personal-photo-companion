@@ -314,13 +314,14 @@
   }
 
   document.getElementById('btn-done').addEventListener('click', () => {
-    // Done / YES: the character RUNS AWAY to the right, across the
-    // screen — not a spin-jump in place. Text and buttons hide, the
-    // person keeps running while the window moves right, then the
-    // bubble is dismissed and the screen clears.
+    // Done / YES, frame-by-frame from the reference video: first
+    // "Nice!" flashes, then the character RUNS AWAY to the right,
+    // across the screen — not a spin-jump in place. Buttons hide,
+    // the person keeps running while the window moves right, then
+    // the bubble is dismissed and the screen clears.
     const type = currentReminderType;
-    bubbleTitleEl.classList.add('hidden');
-    bubbleTextEl.classList.add('hidden');
+    bubbleTitleEl.textContent = 'Nice!';
+    bubbleTextEl.textContent = '';
     const actionsEl = document.getElementById('bubble-actions');
     if (actionsEl) actionsEl.classList.add('hidden');
     bubbleEl.classList.add('anim-run');
@@ -343,10 +344,11 @@
   });
 
   document.getElementById('btn-snooze').addEventListener('click', () => {
-    // Snooze / Later, for BOTH water and exercise: the character
-    // goes SAD first — droops, dims and greys out for 1.6s so you
-    // actually see it — then the snooze is sent and the screen
-    // clears. Previously water hid instantly, so no sad was visible.
+    // Snooze / Later, for BOTH water and exercise, frame-by-frame
+    // from the reference video: the character goes SAD first —
+    // head down, bottle down, droops and dims for 1.6s — then
+    // WALKS SLOWLY TO THE LEFT, off the screen, and only then is
+    // the snooze sent and the screen cleared. Not sad-in-place.
     const type = currentReminderType;
     if (!type) return;
     setAvatarAnim('anim-sad');
@@ -356,11 +358,14 @@
     const photoEl = document.getElementById('bubble-photo');
     if (photoEl) photoEl.classList.add('anim-sad');
     setTimeout(() => {
-      bubbleEl.classList.remove('anim-sad');
-      if (canvasEl) canvasEl.classList.remove('anim-sad');
-      if (photoEl) photoEl.classList.remove('anim-sad');
-      hideBubble(true);
-      window.companion.snooze(type);
+      if (window.companion.walkLeft) window.companion.walkLeft();
+      setTimeout(() => {
+        bubbleEl.classList.remove('anim-sad');
+        if (canvasEl) canvasEl.classList.remove('anim-sad');
+        if (photoEl) photoEl.classList.remove('anim-sad');
+        hideBubble(true);
+        window.companion.snooze(type);
+      }, 1100);
     }, 1600);
   });
 

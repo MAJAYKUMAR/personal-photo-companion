@@ -620,7 +620,8 @@ async function runE2eSelfTest() {
       avatarClass: document.getElementById('avatar').className,
       bubbleClass: document.getElementById('bubble').className,
     })`);
-    await sleep(1600);
+    // Sad beat 1.6s + sad walk-left 1.1s before the snooze is sent.
+    await sleep(2800);
     // Snooze is recorded even if a queued exercise reminder immediately
     // replaces the water bubble (correct queue behaviour: the next
     // reminder shows, it does not mean snooze failed). Clear any queued
@@ -777,6 +778,14 @@ function applySettings(next) {
     nextFireMs.water = nowMs + intervalDelayMs('water', nowMs);
   }
   if (merged.exerciseIntervalMin !== prev.exerciseIntervalMin) {
+    nextFireMs.exercise = nowMs + intervalDelayMs('exercise', nowMs);
+  }
+  // Working-hours change must take effect immediately, not after the
+  // old suppressed-recheck timer (up to 10 min) — and never leave a
+  // stale nextFire behind when hours are corrected.
+  if (merged.workStartHour !== prev.workStartHour ||
+      merged.workEndHour !== prev.workEndHour) {
+    nextFireMs.water = nowMs + intervalDelayMs('water', nowMs);
     nextFireMs.exercise = nowMs + intervalDelayMs('exercise', nowMs);
   }
   const suppressionOn =
@@ -964,6 +973,20 @@ ipcMain.on('run-away', () => {
   runAwayToRight();
 });
 
+ipcMain.on('walk-left', () => {
+  e2eLog('walk-left');
+  try {
+    const b = mainWindow.getBounds();
+    let x = b.x;
+    const timer = setInterval(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) { clearInterval(timer); return; }
+      x -= 40;
+      mainWindow.setBounds({ x, y: b.y, width: b.width, height: b.height });
+      if (x < -240) clearInterval(timer);
+    }, 60);
+  } catch { /* hides via snooze anyway */ }
+});
+
 ipcMain.on('bubble-dismissed', () => {
   e2eLog('bubble-dismissed');
   bubble.done();
@@ -972,6 +995,14 @@ ipcMain.on('bubble-dismissed', () => {
 });
 
 ipcMain.on('hide-window', () => {
+  // X button bug (user report 2026-10-29: "shows once, never again"):
+  // hiding the window used to leave bubble.visible = true in the
+  // main process, so every later fire queued forever behind a bubble
+  // the user could no longer see. Hiding now clears the bubble and
+  // the queue — timers keep running, so the next scheduled reminder
+  // still fires on time.
+  bubble.done();
+  queue.clear();
   if (mainWindow) mainWindow.hide();
 });
 

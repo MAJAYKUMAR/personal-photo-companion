@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('companion', {
   snooze: (type) => ipcRenderer.send('snooze', type),
   bubbleDismissed: () => ipcRenderer.send('bubble-dismissed'),
   runAway: () => ipcRenderer.send('run-away'),
+  walkLeft: () => ipcRenderer.send('walk-left'),
   onWalkStart: (callback) => ipcRenderer.on('walk-start', () => callback()),
   hideWindow: () => ipcRenderer.send('hide-window'),
   quitApp: () => ipcRenderer.send('quit-app'),
