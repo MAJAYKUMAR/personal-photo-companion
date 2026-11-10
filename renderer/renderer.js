@@ -193,12 +193,16 @@
       // and filling the frame, per EXERCISE_VIDEO_RULES.md. Squats now
       // use a grey-background clip, so its key colour is grey too —
       // the old green-screen clip is superseded.
+      // 2026-11-09: all 10 are now generic 3D character on GREEN screen (no Ajay face, per Ajay 2026-11-09)
+      // (teal hoodie, beard, tilak, large, full body) — the old grey
+      // clips left a whitish floor/shadow fringe that distance keying
+      // could not remove. Green is keyed by dominance, not distance.
       const EXERCISE_VIDEOS = [
-        'ex0-arms-overhead-v2.mp4', 'ex1-shoulder-rolls-v2.mp4',
-        'ex2-neck-turns-v2.mp4', 'ex3-walk-around-v3.mp4',
-        'ex4-chair-squats-v2.mp4', 'ex5-wrist-stretch-v4.mp4',
-        'ex6-calf-raises-v4.mp4', 'ex7-shake-hands-v4.mp4',
-        'ex8-spinal-twist-v4.mp4', 'ex9-march-in-place-v2.mp4',
+        'ex0-arms-generic-green.mp4', 'ex1-shoulder-generic-green.mp4',
+        'ex2-neck-generic-green.mp4', 'ex3-walk-generic-green.mp4',
+        'ex4-squat-generic-green.mp4', 'ex5-wrist-generic-green.mp4',
+        'ex6-calf-generic-green.mp4', 'ex7-shake-generic-green.mp4',
+        'ex8-twist-generic-green.mp4', 'ex9-march-generic-green.mp4',
       ];
       const KEY_COLORS = [
         [214, 211, 210], [214, 211, 210], [214, 211, 210],
@@ -218,11 +222,12 @@
           const d = frame.data; const kc = KEY_COLORS[idx];
           for (let i = 0; i < d.length; i += 4) {
             const dr = d[i] - kc[0], dg = d[i + 1] - kc[1], db = d[i + 2] - kc[2];
-            // Squats (index 4) use a green screen whose shade varies across
-            // the frame (corners measured 44-62 away from the key colour),
-            // so distance-only keying left green patches visible. For green,
-            // key any pixel where green clearly dominates red and blue.
-            const isGreenScreen = idx === 4 && d[i + 1] > d[i] + 30 && d[i + 1] > d[i + 2] + 30;
+            // Green screen (all 10 clips, 2026-11-09): background green
+            // is ~G 160-180, R/B near 0, so key by dominance — G > R+50
+            // and G > B+50. Teal hoodie is safe (B >= G), skin is safe
+            // (R > G), white shoes are safe (R≈G≈B). Grey distance
+            // keying stays as a fallback for the old clips.
+            const isGreenScreen = d[i + 1] > 100 && d[i + 1] > d[i] + 50 && d[i + 1] > d[i + 2] + 50;
             if (isGreenScreen || Math.sqrt(dr * dr + dg * dg + db * db) < 42) d[i + 3] = 0;
           }
           ctx.putImageData(frame, 0, 0);
