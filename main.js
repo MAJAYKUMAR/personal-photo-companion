@@ -49,12 +49,13 @@ if (process.platform === 'win32') {
 
 const E2E = process.env.PCC_E2E === '1';
 const TICK_MS = 30 * 1000;
-const WIN_WIDTH = 240;
-const WIN_HEIGHT = 330;
+const WIN_WIDTH = 360;
+const WIN_HEIGHT = 480;
+const WIN_HEIGHT_REMINDER = 640;
 // Tall enough for the full settings panel (avatar, Save, previews, note).
 // The window grows upward from the bottom-right corner so it never
 // slides off the bottom of the screen when settings open.
-const WIN_HEIGHT_SETTINGS = 850;
+const WIN_HEIGHT_SETTINGS = 900;
 
 let mainWindow = null;
 let tray = null;
@@ -253,7 +254,7 @@ function hideWindowIfNoBubble() {
 // plus bubble, status and toolbar all fit; anchored bottom-right.
 function resizeWindowForReminder() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  const target = 520;
+  const target = WIN_HEIGHT_REMINDER;
   const b = mainWindow.getBounds();
   if (b.height !== target) {
     const area = screen.getPrimaryDisplay().workArea;
@@ -278,16 +279,19 @@ function walkInFromLeft(payload) {
     // (and its buttons) can sit behind / below the taskbar.
     const area = screen.getPrimaryDisplay().workArea;
     const b = mainWindow.getBounds();
-    const y = area.y + area.height - 520 - 16;
-    mainWindow.setBounds({ x: -240, y, width: 240, height: 520 });
+    const y = area.y + area.height - WIN_HEIGHT_REMINDER - 16;
+    // End CENTRE, not left edge: reference character stands in the
+    // middle of the screen, prominent over the work, not tucked away.
+    const endX = area.x + Math.round((area.width - WIN_WIDTH) / 2);
+    mainWindow.setBounds({ x: -WIN_WIDTH, y, width: WIN_WIDTH, height: WIN_HEIGHT_REMINDER });
     mainWindow.showInactive();
     mainWindow.webContents.send('walk-start');
-    let x = -240;
+    let x = -WIN_WIDTH;
     const timer = setInterval(() => {
       if (!mainWindow || mainWindow.isDestroyed()) { clearInterval(timer); return; }
-      x += 35;
-      mainWindow.setBounds({ x, y, width: 240, height: 520 });
-      if (x >= 20) {
+      x += 50;
+      mainWindow.setBounds({ x, y, width: WIN_WIDTH, height: WIN_HEIGHT_REMINDER });
+      if (x >= endX) {
         clearInterval(timer);
         e2eLog('walk-in-done', x);
         mainWindow.webContents.send('reminder', payload);
@@ -373,7 +377,7 @@ function flushQueue() {
 
 function buildPayload(type) {
   if (type === 'water') {
-    return { type: 'water', title: 'Water break', text: 'Time for a sip of water.' };
+    return { type: 'water', title: 'Hey Ajay, did you drink water?', text: 'Time for a sip of water.' };
   }
   const rotated = rotateExercise(settings);
   settings = rotated.settings;
@@ -554,7 +558,7 @@ async function runE2eSelfTest() {
     await sleep(1000);
     // 2. Launch: window size, avatar, status, toolbar.
     const bounds0 = mainWindow.getBounds();
-    check('window-240x330', bounds0.width === 240 && bounds0.height === 330,
+    check('window-360x480', bounds0.width === 360 && bounds0.height === 480,
       JSON.stringify(bounds0));
     const launchDom = await js(`({
       avatarSrc: document.getElementById('avatar').src,
@@ -581,7 +585,7 @@ async function runE2eSelfTest() {
       saveVisible: document.getElementById('btn-save').offsetParent !== null,
     })`);
     check('settings-visible', settingsDom.visible === true);
-    check('window-grows-to-850-on-settings', boundsSettings.height === 850,
+    check('window-grows-to-900-on-settings', boundsSettings.height === 900,
       JSON.stringify(boundsSettings));
     check('save-button-fits-in-window',
       settingsDom.saveVisible === true &&
@@ -604,7 +608,7 @@ async function runE2eSelfTest() {
       saved.workStartHour === 8 && saved.workEndHour === 20,
       JSON.stringify(saved));
     const boundsAfterSave = mainWindow.getBounds();
-    check('window-shrinks-to-330-after-save', boundsAfterSave.height === 330,
+    check('window-shrinks-to-480-after-save', boundsAfterSave.height === 480,
       JSON.stringify(boundsAfterSave));
     // 4. Water reminder: wait for the timed fire, check bubble, Snooze.
     // Note: with the saved 33-min interval a timed fire cannot arrive
@@ -620,7 +624,7 @@ async function runE2eSelfTest() {
       title: document.getElementById('bubble-title').textContent,
       text: document.getElementById('bubble-text').textContent,
     })`);
-    check('water-bubble-content', waterDom.title === 'Water break' &&
+    check('water-bubble-content', waterDom.title === 'Hey Ajay, did you drink water?' &&
       waterDom.text === 'Time for a sip of water.', JSON.stringify(waterDom));
     await js(`document.getElementById('btn-snooze').click()`);
     // Sad beat is 1.6s: check it MID-beat (500ms), not after the
@@ -693,12 +697,12 @@ async function runE2eSelfTest() {
       bubbleHidden: document.getElementById('bubble').classList.contains('hidden'),
     })`);
     // Note: windowHeight is baked in at test time via getBounds above;
-    // the check compares button bottoms against the 520px reminder
+    // the check compares button bottoms against the 640px reminder
     // height, which is the height the window must have with a bubble up.
     check('settings-close-during-bubble-keeps-buttons-visible',
       afterSettingsDom.bubbleHidden === false &&
-      afterSettingsDom.doneRect.bottom <= 520 &&
-      afterSettingsDom.snoozeRect.bottom <= 520 &&
+      afterSettingsDom.doneRect.bottom <= 640 &&
+      afterSettingsDom.snoozeRect.bottom <= 640 &&
       afterSettingsDom.doneRect.top >= 0 &&
       afterSettingsDom.snoozeRect.top >= 0,
       JSON.stringify(afterSettingsDom));
@@ -751,17 +755,20 @@ async function runE2eSelfTest() {
       doneRect: (() => { const r = document.getElementById('btn-done').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
       snoozeRect: (() => { const r = document.getElementById('btn-snooze').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
       photoRect: (() => { const r = document.getElementById('bubble-photo').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
+      canvasVisible: !document.getElementById('bubble-canvas').classList.contains('hidden'),
+      videoSrc: document.getElementById('bubble-video').src,
+      canvasRect: (() => { const r = document.getElementById('bubble-canvas').getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; })(),
     })`);
-    check('edge-water-preview-content', wDom.title === 'Water break' && wDom.text === 'Time for a sip of water.', JSON.stringify(wDom));
+    check('edge-water-preview-content', wDom.title === 'Hey Ajay, did you drink water?' && wDom.text === 'Time for a sip of water.', JSON.stringify(wDom));
     check('edge-water-preview-status', wDom.status === 'Water break', wDom.status);
-    check('edge-water-bottle-photo', wDom.photoVisible === true && /water-bottle-cutout/.test(wDom.photoSrc || ''), wDom.photoSrc);
+    check('edge-water-bottle-photo', wDom.canvasVisible === true && /water-standing-v1/.test(wDom.videoSrc || ''), wDom.videoSrc);
     check('edge-avatar-hidden-during-bubble', wDom.avatarHidden === true, JSON.stringify(wDom.avatarHidden));
     const toolbarHiddenDom = await js(`document.getElementById('toolbar').classList.contains('hidden') || document.getElementById('toolbar').style.display === 'none'`);
     check('edge-toolbar-hidden-during-bubble', toolbarHiddenDom === true, JSON.stringify(toolbarHiddenDom));
-    check('edge-buttons-visible-in-window', wDom.doneRect.bottom <= 520 && wDom.snoozeRect.bottom <= 520 && wDom.doneRect.top >= 0, JSON.stringify(wDom));
-    check('edge-buttons-above-photo', wDom.doneRect.bottom <= wDom.photoRect.top && wDom.snoozeRect.bottom <= wDom.photoRect.top, JSON.stringify(wDom));
+    check('edge-buttons-visible-in-window', wDom.doneRect.bottom <= 640 && wDom.snoozeRect.bottom <= 640 && wDom.doneRect.top >= 0, JSON.stringify(wDom));
+    check('edge-buttons-above-photo', wDom.doneRect.bottom <= wDom.canvasRect.top && wDom.snoozeRect.bottom <= wDom.canvasRect.top, JSON.stringify(wDom));
     const wBounds = mainWindow.getBounds();
-    check('edge-window-240x520-on-reminder', wBounds.width === 240 && wBounds.height === 520, JSON.stringify(wBounds));
+    check('edge-window-360x640-on-reminder', wBounds.width === 360 && wBounds.height === 640, JSON.stringify(wBounds));
     try {
       const wa = screen.getPrimaryDisplay().workArea;
       check('edge-window-above-taskbar', wBounds.y + wBounds.height <= wa.y + wa.height, JSON.stringify({ bounds: wBounds, workArea: wa }));
@@ -785,17 +792,17 @@ async function runE2eSelfTest() {
       hidden: document.getElementById('bubble').classList.contains('hidden'),
       count: document.querySelectorAll('#bubble').length,
     })`);
-    check('edge-double-preview-single-bubble', dblDom.title === 'Water break' && dblDom.hidden === false && dblDom.count === 1, JSON.stringify(dblDom));
-    // Settings open during bubble -> 850, close -> 520 (not 330).
+    check('edge-double-preview-single-bubble', dblDom.title === 'Hey Ajay, did you drink water?' && dblDom.hidden === false && dblDom.count === 1, JSON.stringify(dblDom));
+    // Settings open during bubble -> 900, close -> 640 (not 480).
     await js(`document.getElementById('btn-settings').click()`);
     await sleep(800);
-    check('edge-settings-open-during-bubble-850', mainWindow.getBounds().height === 850, JSON.stringify(mainWindow.getBounds()));
+    check('edge-settings-open-during-bubble-900', mainWindow.getBounds().height === 900, JSON.stringify(mainWindow.getBounds()));
     const photoVal = await js(`document.getElementById('in-avatar').value`);
     check('edge-photo-dropdown-placeholder', photoVal === 'placeholder', photoVal);
     await js(`document.getElementById('btn-settings').click()`);
     await sleep(800);
-    check('edge-settings-close-during-bubble-520', mainWindow.getBounds().height === 520, JSON.stringify(mainWindow.getBounds()));
-    // Save during bubble -> also 520, bubble stays up.
+    check('edge-settings-close-during-bubble-640', mainWindow.getBounds().height === 640, JSON.stringify(mainWindow.getBounds()));
+    // Save during bubble -> also 640, bubble stays up.
     // Re-preview first: the 4s e2e auto-hide may have cleared the
     // bubble during the settings steps above, which is correct
     // behaviour, not a save bug.
@@ -806,7 +813,7 @@ async function runE2eSelfTest() {
     await js(`document.getElementById('btn-save').click()`);
     await sleep(800);
     const saveDom = await js(`({ height: 0, bubbleHidden: document.getElementById('bubble').classList.contains('hidden') })`);
-    check('edge-save-during-bubble-520', mainWindow.getBounds().height === 520 && saveDom.bubbleHidden === false, JSON.stringify({ bounds: mainWindow.getBounds(), bubbleHidden: saveDom.bubbleHidden }));
+    check('edge-save-during-bubble-640', mainWindow.getBounds().height === 640 && saveDom.bubbleHidden === false, JSON.stringify({ bounds: mainWindow.getBounds(), bubbleHidden: saveDom.bubbleHidden }));
     // Hide (X) then preview again: window must come back, bubble up.
     await js(`document.getElementById('btn-hide').click()`);
     await sleep(500);
@@ -1112,7 +1119,7 @@ ipcMain.on('walk-left', () => {
       if (!mainWindow || mainWindow.isDestroyed()) { clearInterval(timer); return; }
       x -= 40;
       mainWindow.setBounds({ x, y: b.y, width: b.width, height: b.height });
-      if (x < -240) clearInterval(timer);
+      if (x < -WIN_WIDTH) clearInterval(timer);
     }, 60);
   } catch { /* hides via snooze anyway */ }
 });
