@@ -199,10 +199,10 @@ if (!CAN_RUN) {
 
   test('live sanity checks: window, settings panel, buttons, suppression', () => {
     for (const name of [
-      'window-240x330', 'avatar-loads', 'status-here-with-you',
+      'window-360x480', 'avatar-loads', 'status-here-with-you',
       'toolbar-4-buttons', 'bubble-hidden-at-launch', 'settings-visible',
-      'window-grows-to-850-on-settings', 'save-button-fits-in-window',
-      'photo-option-visible', 'window-shrinks-to-330-after-save',
+      'window-grows-to-900-on-settings', 'save-button-fits-in-window',
+      'photo-option-visible', 'window-shrinks-to-480-after-save',
       'water-reminder-fires', 'water-bubble-content', 'snooze-recorded',
       'snooze-sleepy-animation', 'snooze-hides-bubble',
       'exercise-bubble-content', 'exercise-figure-visible',
