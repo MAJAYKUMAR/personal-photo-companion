@@ -18,17 +18,16 @@
       <div id="status">Here with you</div>
     </div>
 
-    <!-- Reminder speech bubble, hidden until a reminder fires.
-         Buttons FIRST, above the photo — like the reference video's
-         YES / Remind me later pills above the character — so Done /
-         Snooze are never pushed below the window bottom / taskbar,
-         even if the window sits low on screen. -->
+    <!-- Reminder bubble, reference order (re-watched 2026-11-09):
+         QUESTION text on top (large), then YES / Remind me later
+         pills, then the STANDING character, centre, large.
+         No "Water break" label, no status pill, no toolbar here. -->
     <div id="bubble" class="hidden" role="status">
+      <div id="bubble-title"></div>
       <div id="bubble-actions">
         <button id="btn-done" type="button">Done ✓</button>
         <button id="btn-snooze" type="button">Snooze 10 min</button>
       </div>
-      <div id="bubble-title"></div>
       <!-- Final version: exercise photo (and squat video) of the same
            3D cartoon character doing the exercise, shown for exercise
            reminders only; hidden for water reminders. The SVG figure
@@ -38,7 +37,7 @@
       <!-- Canvas chromakey: the video is drawn here frame-by-frame with
            its background (grey, or green for squats) keyed out, so only
            the person floats over the desktop — no rectangle. -->
-      <canvas id="bubble-canvas" class="hidden" width="170" height="340"></canvas>
+      <canvas id="bubble-canvas" class="hidden" width="280" height="400"></canvas>
       <div id="bubble-figure" class="hidden" aria-hidden="true">
         <svg viewBox="0 0 100 140" width="90" height="126">
           <g class="fig-person">

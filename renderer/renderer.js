@@ -121,6 +121,17 @@
     currentReminderType = reminder.type;
     bubbleTitleEl.textContent = reminder.title;
     bubbleTextEl.textContent = reminder.text;
+    // Reference labels: water = YES / Remind me later, exercise =
+    // Done / Snooze 10 min. Same handlers, only the words change.
+    const doneBtn = document.getElementById('btn-done');
+    const snoozeBtn = document.getElementById('btn-snooze');
+    if (reminder.type === 'water') {
+      if (doneBtn) doneBtn.textContent = 'YES';
+      if (snoozeBtn) snoozeBtn.textContent = 'Remind me later';
+    } else {
+      if (doneBtn) doneBtn.textContent = 'Done ✓';
+      if (snoozeBtn) snoozeBtn.textContent = 'Snooze 10 min';
+    }
     // Exercise reminders show the 3D cartoon doing that exercise:
     // a photo for exercises 0-4, a looping squat video for squats
     // (index 4), and the animated SVG figure as fallback for 5-9
@@ -146,13 +157,32 @@
     if (canvasEl) canvasEl.classList.add('hidden');
     if (window.__pccVideoLoop) { cancelAnimationFrame(window.__pccVideoLoop); window.__pccVideoLoop = 0; }
     if (figureEl) figureEl.classList.add('hidden');
-    if (reminder.type === 'water' && photoEl) {
-      // Water: the character holding a water bottle up in his hand,
-      // cut out, floating over the desktop — no box, just the person
-      // + bottle + text + buttons. (Previously it was the plain
-      // sitting character with no bottle at all.)
-      photoEl.src = '../assets/water-bottle-cutout.png';
-      photoEl.className = '';
+    if (reminder.type === 'water' && videoEl && canvasEl) {
+      // Water (2026-11-09, re-watched reference): STANDING Ajay
+      // cartoon, bottle raised in his right hand, smiling at the
+      // viewer — a moving video, NOT the old sitting photo. Grey
+      // background ~200,200,202 keyed out on the canvas, same as
+      // exercise clips. First ~3s he stands up from the stool, then
+      // he is standing, bottle raised, for the rest of the loop.
+      const ctx = canvasEl.getContext('2d');
+      videoEl.src = '../assets/exercises/water-standing-v1.mp4';
+      videoEl.muted = true; videoEl.loop = true;
+      canvasEl.classList.remove('hidden');
+      const kc = [200, 200, 202];
+      const drawWater = () => {
+        if (videoEl.paused || videoEl.ended) return;
+        ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+        const frame = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+        const d = frame.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const dr = d[i] - kc[0], dg = d[i + 1] - kc[1], db = d[i + 2] - kc[2];
+          if (Math.sqrt(dr * dr + dg * dg + db * db) < 42) d[i + 3] = 0;
+        }
+        ctx.putImageData(frame, 0, 0);
+        window.__pccVideoLoop = requestAnimationFrame(drawWater);
+      };
+      videoEl.onloadeddata = () => { videoEl.play().then(drawWater).catch(() => {}); };
+      videoEl.load();
     }
     if (reminder.type === 'exercise' &&
         Number.isInteger(reminder.exerciseIndex)) {
@@ -210,6 +240,10 @@
       }
     }
     bubbleEl.classList.remove('hidden');
+    // Hide the duplicate status pill during a bubble: the title
+    // already says "Water break" / "Movement break", and the pill
+    // above the buttons read as a blank white bar in Ajay's video.
+    if (statusEl) { statusEl.classList.add('hidden'); statusEl.style.display = 'none'; }
     // User decision 2026-10-29: during a water/exercise reminder,
     // ONLY Done / Snooze show — hide the 4 toolbar buttons
     // (Settings, Quiet, DND, Hide) so they don't clutter the bubble
@@ -251,6 +285,7 @@
     // Restore the toolbar for the tray-click / no-reminder view.
     const toolbarEl = document.getElementById('toolbar');
     if (toolbarEl) { toolbarEl.classList.remove('hidden'); toolbarEl.style.display = ''; }
+    if (statusEl) { statusEl.classList.remove('hidden'); statusEl.style.display = ''; }
     const figureEl = document.getElementById('bubble-figure');
     if (figureEl) figureEl.classList.add('hidden');
     const photoEl = document.getElementById('bubble-photo');
@@ -402,18 +437,18 @@
     // or toolbar left on the desktop by default.
     if (settingsEl.classList.contains('hidden')) {
       // BUG (user video 2026-10-29): closing settings DURING a reminder
-      // shrank the window to 330px, so the bubble (photo + text +
-      // buttons, ~520px) overflowed below the window / taskbar and
+      // shrank the window to 480px, so the bubble (photo + text +
+      // buttons, ~640px) overflowed below the window / taskbar and
       // Done / Snooze could not be seen or clicked. If a bubble is
-      // showing, restore the reminder height (520), not compact (330).
+      // showing, restore the reminder height (640), not compact (480).
       if (bubbleEl.classList.contains('hidden')) {
-        window.companion.resizeWindow(330);
+        window.companion.resizeWindow(480);
         window.companion.hideWindow();
       } else {
-        window.companion.resizeWindow(520);
+        window.companion.resizeWindow(640);
       }
     } else {
-      window.companion.resizeWindow(850);
+      window.companion.resizeWindow(900);
     }
   });
 
@@ -462,12 +497,12 @@
       fillSettingsForm(data);
       settingsEl.classList.add('hidden');
       // Same bug as settings-close: Save during a reminder must
-      // restore 520px, not shrink to 330px and cut the buttons off.
+      // restore 640px, not shrink to 480px and cut the buttons off.
       if (bubbleEl.classList.contains('hidden')) {
-        window.companion.resizeWindow(330);
+        window.companion.resizeWindow(480);
         window.companion.hideWindow();
       } else {
-        window.companion.resizeWindow(520);
+        window.companion.resizeWindow(640);
       }
     });
   });
